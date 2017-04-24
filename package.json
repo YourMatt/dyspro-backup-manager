@@ -1,0 +1,20 @@
+{
+  "name": "dyspro-backup-manager",
+  "version": "0.9.0",
+  "description": "A command line utility for creating offsite backups to a local network from a server environment.",
+  "main": "backup.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YourMatt/dyspro-backup-manager.git"
+  },
+  "author": "Matt Sadowski",
+  "license": "MIT",
+  "bin": {
+    "dysprobackup": "./backup.js",
+    "dysprobackupmanage": "./manage.js"
+  },
+  "dependencies": {
+    "dotenv": "~4.0.0",
+    "mysql": "~2.13.0"
+  }
+}
