@@ -1,10 +1,12 @@
 var mysql = require ("mysql");
 
+// Provides all database queries.
 exports.query = {
 
+    // Pulls list of all servers.
     getServers: function (callback) {
 
-        exports.access.selectMultiple ({
+        databaseAccessor.selectMultiple ({
             sql:    "SELECT     * " +
                     "FROM       Servers " +
                     "ORDER BY   ServerName ASC "
@@ -15,7 +17,8 @@ exports.query = {
 
 };
 
-exports.access = {
+// Provides all database connectivity methods.
+var databaseAccessor = {
 
     db: null,
 
@@ -32,7 +35,7 @@ exports.access = {
         // connect to the database
         this.db.connect (function (error) {
             if (error) {
-                return exports.access.handleError ("", error, callback);
+                return databaseAccessor.handleError ("", error, callback);
             }
         });
 
@@ -72,7 +75,7 @@ exports.access = {
         this.db.query(query, function (error, rows) {
 
             // report error and return if error state
-            if (error) return exports.access.handleError (query, error, callback);
+            if (error) return databaseAccessor.handleError (query, error, callback);
 
             // call the callback with data
             if (returnSingle) callback({
