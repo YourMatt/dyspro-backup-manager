@@ -15,7 +15,7 @@ program
 .description ("manage server connections where [action] is one of: list, add, update, delete")
 .option ("-n, --hostname <hostname>", "server http host name - required for: add, update, delete")
 .option ("-u, --username <username>", "server ssh login user name - required for: add, update")
-.option ("-s, --sshkey <sshkey>", "path to ssh private key file - required for: add, update")
+.option ("-k, --sshkey <sshkey>", "path to ssh private key file - required for: add, update")
 .action (function (action, options) {
     if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided
 

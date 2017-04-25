@@ -42,5 +42,5 @@ View help file for server operations.
 `dysprobackupmanage servers list`  
 Display all registered servers.
 
-`dysprobackupmanage servers add -n host_name -u ssh_user_name -s /path/to/ssh/private/key/file`  
+`dysprobackupmanage servers add -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`  
 Register a new server. This will also validate the connection and add to known_hosts if necessary. 
