@@ -22,7 +22,7 @@ This requires a MySQL database to manage server connections, backups schedules, 
 
 1.  From your home directory (or any other location), clone this repo.
 2.  Move into `./dyspro-backup-manager`.
-3.  Run `npm install -g`. The `dysprobackup` and `dysprobackupmanage` commands should now be accessible for command line or CronTab use. _If you plan on editing this code, you may want to use `npm link` so that changes to the source are reflected by any global use of the `dysprobackupmanager` command._
+3.  Run `npm install -g`. The `dysprobackup` and `dysprobackupmanage` commands should now be accessible for command line or CronTab use. _If you plan on editing this code, you may want to use `npm link` so that changes to the source are reflected by any global use of the shell commands._
 4.  Copy or move the `.env.sample` file to `.env`.
 5.  Adjust the values within `.env` to match your environment.
 
@@ -34,8 +34,13 @@ This includes two utilities. The `dysprobackup` command will perform the backup 
 `dysprobackupmanage -h`  
 View help file for full list of options.
 
+#### Manage Servers
+
+`dysprobackupmanage servers -h`  
+View help file for server operations.
+
 `dysprobackupmanage servers list`  
-Displays all servers that backups can operate against.
+Display all registered servers.
 
 `dysprobackupmanage servers add -n host_name -u ssh_user_name -s /path/to/ssh/private/key/file`  
-Register a new server that backups can operate against. 
+Register a new server. This will also validate the connection and add to known_hosts if necessary. 
