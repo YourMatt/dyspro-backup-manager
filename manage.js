@@ -51,10 +51,19 @@ program
                 function (error) {
                     if (! utils.valueIsEmpty(error)) return console.log (error);
 
-                    // TODO: Run inset against the database
+                    // run database insert
+                    database.query.insertServer (
+                        options.hostname,
+                        options.username,
+                        options.sshkey,
+                        function (data) {
+                            if (data.error) return console.log (data.error);
 
-                    console.log ("Added %s to server list.", options.hostname);
+                            // respond with success message
+                            console.log ("Added %s to server list.", options.hostname);
 
+                        }
+                    );
                 }
             );
 

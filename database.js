@@ -1,4 +1,5 @@
-var mysql = require ("mysql");
+var mysql = require ("mysql")
+,   utils = require ("./utils");
 
 // Provides all database queries.
 exports.query = {
@@ -9,7 +10,22 @@ exports.query = {
         databaseAccessor.selectMultiple ({
             sql:    "SELECT     * " +
                     "FROM       Servers " +
-                    "ORDER BY   ServerName ASC "
+                    "ORDER BY   HostName ASC "
+        },
+        callback);
+
+    },
+
+    // Inserts new server.
+    insertServer: function (hostName, userName, sshKeyFileLocation, callback) {
+
+        databaseAccessor.insert ({
+            sql:    "INSERT INTO Servers SET ?",
+            values: {
+                HostName: hostName,
+                UserName: userName,
+                SSHKeyFileLocation: sshKeyFileLocation
+            }
         },
         callback);
 
@@ -69,10 +85,10 @@ var databaseAccessor = {
     // run a query against the database
     selectMultiple: function (query, callback, returnSingle) {
 
-        if (! this.init(callback)) return;
+        if (! this.init (callback)) return;
 
         // run the query
-        this.db.query(query, function (error, rows) {
+        this.db.query (query, function (error, rows) {
 
             // report error and return if error state
             if (error) return databaseAccessor.handleError (query, error, callback);
@@ -91,7 +107,31 @@ var databaseAccessor = {
 
         });
 
-        this.close();
+        this.close ();
+
+    },
+
+    // run an insert against the database
+    insert: function (query, callback) {
+
+        if (! this.init(callback)) return;
+
+        // run the query
+        this.db.query (query, function (error, result) {
+
+            if (! utils.valueIsEmpty(error)) return callback ({
+                insertId: 0,
+                error: error.toString()
+            });
+
+            callback ({
+                insertId: result.insertId,
+                error: (result.insertId) ? "" : "An unknown error occurred while performing the insert."
+            });
+
+        });
+
+        this.close ();
 
     }
 
