@@ -43,4 +43,7 @@ View help file for server operations.
 Display all registered servers.
 
 `dysprobackupmanage servers add -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`  
-Register a new server. This will also validate the connection and add to known_hosts if necessary. 
+Register a new server. This will also validate the connection and add to known_hosts if necessary.
+
+`dysprobackupmanage servers delete -n host_name`  
+Unregisters a server. Any schedules related to the server will be deleted after confirmation.

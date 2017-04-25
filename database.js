@@ -4,30 +4,78 @@ var mysql = require ("mysql")
 // Provides all database queries.
 exports.query = {
 
-    // Pulls list of all servers.
-    getServers: function (callback) {
+    // Query against servers.
+    servers: {
 
-        databaseAccessor.selectMultiple ({
-            sql:    "SELECT     * " +
-                    "FROM       Servers " +
-                    "ORDER BY   HostName ASC "
+        // Pulls list of all servers.
+        get: function (callback) {
+
+            databaseAccessor.selectMultiple ({
+                sql: "SELECT     * " +
+                     "FROM       Servers " +
+                     "ORDER BY   HostName ASC "
+            },
+            callback);
+
         },
-        callback);
+
+        // Pulls a single server.
+        getByHostName: function (hostName, callback) {
+
+            databaseAccessor.selectSingle ({
+                sql: "SELECT * " +
+                     "FROM   Servers " +
+                     "WHERE  HostName = ? ",
+                values: hostName
+            },
+            callback);
+
+        },
+
+        // Inserts new server.
+        insert: function (hostName, userName, sshKeyFileLocation, callback) {
+
+            databaseAccessor.insert ({
+                sql: "INSERT INTO Servers SET ?",
+                values: {
+                    HostName: hostName,
+                    UserName: userName,
+                    SSHKeyFileLocation: sshKeyFileLocation
+                }
+            },
+            callback);
+
+        },
+
+        // Deletes an existing server.
+        delete: function (serverId, callback) {
+
+            databaseAccessor.delete ({
+                sql:    "DELETE FROM    Servers " +
+                        "WHERE          ServerId = ? ",
+                values: serverId
+            },
+            callback);
+
+        }
 
     },
 
-    // Inserts new server.
-    insertServer: function (hostName, userName, sshKeyFileLocation, callback) {
+    // Query against schedules.
+    schedules: {
 
-        databaseAccessor.insert ({
-            sql:    "INSERT INTO Servers SET ?",
-            values: {
-                HostName: hostName,
-                UserName: userName,
-                SSHKeyFileLocation: sshKeyFileLocation
-            }
-        },
-        callback);
+        // Pulls a list of all schedules related to a server.
+        getByServerId: function (serverId, callback) {
+
+            databaseAccessor.selectMultiple ({
+                sql:        "SELECT * " +
+                            "FROM   Schedules " +
+                            "WHERE  ServerId = ? ",
+                values:     serverId
+            },
+            callback);
+
+        }
 
     }
 
@@ -94,11 +142,22 @@ var databaseAccessor = {
             if (error) return databaseAccessor.handleError (query, error, callback);
 
             // call the callback with data
-            if (returnSingle) callback({
-                numResults: (rows.length > 1) ? rows.length : 1,
-                results: rows[0],
-                error: ""
-            });
+            if (returnSingle) {
+                if (rows.length) {
+                    callback ({
+                        numResults: (rows.length > 1) ? rows.length : 1,
+                        results: rows[0],
+                        error: ""
+                    });
+                }
+                else {
+                    callback ({
+                        numResults: 0,
+                        results: {},
+                        error: ""
+                    });
+                }
+            }
             else callback ({
                 numResults: rows.length,
                 results: rows,
@@ -127,6 +186,30 @@ var databaseAccessor = {
             callback ({
                 insertId: result.insertId,
                 error: (result.insertId) ? "" : "An unknown error occurred while performing the insert."
+            });
+
+        });
+
+        this.close ();
+
+    },
+
+    // run a delete against the database
+    delete: function (query, callback) {
+
+        if (! this.init(callback)) return;
+
+        // run the query
+        this.db.query (query, function (error, result) {
+
+            if (! utils.valueIsEmpty(error)) return callback ({
+                numDeleted: 0,
+                error: error.toString()
+            });
+
+            callback ({
+                numDeleted: result.affectedRows,
+                error: ""
             });
 
         });

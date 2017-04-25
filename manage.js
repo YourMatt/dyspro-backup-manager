@@ -26,7 +26,7 @@ program
             console.log ("list");
 
             // retrieve all servers from the database
-            database.query.getServers(function (data) {
+            database.query.servers.get (function (data) {
 
                 // TODO: Format results as table
                 console.log (data);
@@ -44,28 +44,34 @@ program
                 utils.valueIsEmpty (options.sshkey))
                 return console.log ("Missing required options: --hostname, --username, or --sshkey");
 
-            shell.validateSSHKey (
-                options.sshkey,
-                options.hostname,
-                options.username,
-                function (error) {
-                    if (! utils.valueIsEmpty(error)) return console.log (error);
+            // validate that the host name is not already in use
+            database.query.servers.getByHostName (options.hostname, function (data) {
+                if (data.numResults) return console.log ("Host name is already registered.");
 
-                    // run database insert
-                    database.query.insertServer (
-                        options.hostname,
-                        options.username,
-                        options.sshkey,
-                        function (data) {
-                            if (data.error) return console.log (data.error);
+                // validate the SSH key
+                shell.validateSSHKey (
+                    options.sshkey,
+                    options.hostname,
+                    options.username,
+                    function (error) {
+                        if (!utils.valueIsEmpty (error)) return console.log(error);
 
-                            // respond with success message
-                            console.log ("Added %s to server list.", options.hostname);
+                        // run database insert
+                        database.query.servers.insert (
+                            options.hostname,
+                            options.username,
+                            options.sshkey,
+                            function (data) {
+                                if (data.error) return console.log(data.error);
 
-                        }
-                    );
-                }
-            );
+                                // respond with success message
+                                console.log("Added %s to server list.", options.hostname);
+
+                            }
+                        );
+                    }
+                );
+            });
 
             break;
 
@@ -79,12 +85,52 @@ program
         // delete a server connection
         case "delete":
 
-            console.log ("delete");
+            // check for required fields
+            if (utils.valueIsEmpty (options.hostname))
+                return console.log ("Missing required options: --hostname");
+
+            // find the server by host name
+            database.query.servers.getByHostName (options.hostname, function (data) {
+                if (data.error) return console.log (data.error);
+                if (!data.numResults) return console.log ("Host name not found.");
+
+                var serverId = data.results.ServerId;
+
+                // check the number of schedules affected
+                database.query.schedules.getByServerId (serverId, function (data) {
+                    if (data.error) return console.log (data.error);
+
+                    // TODO: provide confirmation prompt if schedules will be deleted
+
+                    var deletedSchedules = data.numResults;
+
+                    // delete the schedule
+                    database.query.servers.delete (serverId, function (data) {
+                        if (data.error) return console.log (data.error);
+                        if (!data.numDeleted) return console.log ("Server record not found during delete. Expected at ServerId: %s.", serverId);
+
+                        // respond with success message
+                        console.log (
+                            "Deleted %s with %s associated schedule%s from server list.",
+                            options.hostname,
+                            deletedSchedules,
+                            (deletedSchedules == 1) ? "" : "s"
+                        );
+
+                    });
+
+                });
+            });
 
             break;
+
+        // notify invalid usage
         default:
+
             console.log ("Invalid option. Check --help for correct usage.");
+
     }
 });
 
+// process arguments
 program.parse(process.argv);
