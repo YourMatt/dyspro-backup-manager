@@ -4,17 +4,18 @@ USE DysproBackupManager;
 
 CREATE TABLE Servers
 (            ServerId INT AUTO_INCREMENT PRIMARY KEY
-,            ServerName VARCHAR(100) NOT NULL
+,            HostName VARCHAR(100) NOT NULL
 ,            UserName VARCHAR(100) NOT NULL
-,            SSHKeyFileLocation VARCHAR(500) NOT NULL);
+,            SSHKeyFileLocation VARCHAR(500) NOT NULL
+,            UNIQUE (HostName));
 
 CREATE TABLE Schedules
 (            ScheduleId INT AUTO_INCREMENT PRIMARY KEY
 ,            ServerId INT NOT NULL
-,            PickupDirectoryLocation VARCHAR(500) NOT NULL
-,            DropoffDirectoryLocation VARCHAR(500) NOT NULL
-,            CleanupBackups BIT NOT NULL DEFAULT 0
-,            DeletePickupFiles BIT NOT NULL DEFAULT 0
+,            ServerPickupDirectoryLocation VARCHAR(500) NOT NULL
+,            LocalDropoffDirectoryLocation VARCHAR(500) NOT NULL
+,            CleanupLocalBackups BIT NOT NULL DEFAULT 0
+,            DeleteServerPickupFiles BIT NOT NULL DEFAULT 0
 ,            FOREIGN KEY (ServerId) REFERENCES Servers(ServerId));
 
 CREATE TABLE BackupLog
