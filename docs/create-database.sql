@@ -6,14 +6,15 @@ CREATE TABLE Servers
 (            ServerId INT AUTO_INCREMENT PRIMARY KEY
 ,            ServerName VARCHAR(100) NOT NULL
 ,            UserName VARCHAR(100) NOT NULL
-,            SSHKeyFileLocation VARCHAR(250) NOT NULL
-,            PickupDirectoryLocation VARCHAR(250) NOT NULL);
+,            SSHKeyFileLocation VARCHAR(500) NOT NULL);
 
 CREATE TABLE Schedules
 (            ScheduleId INT AUTO_INCREMENT PRIMARY KEY
 ,            ServerId INT NOT NULL
-,            DropoffDirectoryLocation VARCHAR(250) NOT NULL
+,            PickupDirectoryLocation VARCHAR(500) NOT NULL
+,            DropoffDirectoryLocation VARCHAR(500) NOT NULL
 ,            CleanupBackups BIT NOT NULL DEFAULT 0
+,            DeletePickupFiles BIT NOT NULL DEFAULT 0
 ,            FOREIGN KEY (ServerId) REFERENCES Servers(ServerId));
 
 CREATE TABLE BackupLog
