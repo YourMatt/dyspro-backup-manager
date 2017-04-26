@@ -2,7 +2,8 @@ var colors = require ("colors/safe");
 
 // set color themes
 colors.setTheme ({
-    error: process.env.COLOR_ERROR
+    error: process.env.COLOR_ERROR,
+    success: process.env.COLOR_SUCCESS
 });
 
 // Checks if a variable value should be resolved as empty.
@@ -22,11 +23,16 @@ exports.escapeShellParameterValue = function (source) {
 // Writes output to console
 exports.output = function (message) {
 
-    console.log (message);
+    console.log (message.trim ());
+
+};
+exports.outputSuccess = function (message) {
+
+    exports.output (colors.success (message.trim ()));
 
 };
 exports.outputError = function (message) {
 
-    exports.output (colors.error (message));
+    exports.output (colors.error (message.trim ()));
 
 };

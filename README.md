@@ -42,6 +42,9 @@ View help file for server operations.
 `dysprobackupmanage servers list`  
 Display all registered servers.
 
+`dysprobackupmanage servers test [-n host_name]`  
+Test SSH connectivity to all registered servers. If the host name is provided, only this host will be tested.
+
 `dysprobackupmanage servers add -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`  
 Register a new server. This will also validate the connection and add to known_hosts if necessary.
 

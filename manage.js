@@ -6,6 +6,7 @@ require ("dotenv").config();
 // include libraries
 var program = require ("commander")
 ,   sprintf = require ("util").format
+,   colors = require ("colors")
 ,   table = require ("cli-table")
 ,   database = require ("./database.js")
 ,   shell = require ("./shell.js")
@@ -14,8 +15,8 @@ var program = require ("commander")
 // handle server management requests
 program
 .command ("servers [action]")
-.description ("manage server connections where [action] is one of: list, add, update, delete")
-.option ("-n, --hostname <hostname>", "server http host name - required for: add, update, delete")
+.description ("manage server connections where [action] is one of: list, test, add, update, delete")
+.option ("-n, --hostname <hostname>", "server http host name - required for: add, update, delete - optional for: test")
 .option ("-u, --username <username>", "server ssh login user name - required for: add, update")
 .option ("-k, --sshkey <sshkey>", "path to ssh private key file - required for: add, update")
 .action (function (action, options) {
@@ -52,6 +53,39 @@ program
 
             break;
 
+        // test existing server connections
+        case "test":
+
+            // test all servers if no hostname set
+            if (utils.valueIsEmpty(options.hostname)) {
+
+                utils.output ("Testing all registered servers...");
+
+                database.query.servers.get (function (data) {
+                    if (data.error) return utils.outputError (data.error);
+                    if (!data.numResults) return utils.output ("No servers are currently registered.");
+
+                    testServerConnection (data.results);
+
+                });
+
+            }
+
+            // test single server if hostname provided
+            else {
+
+                database.query.servers.getByHostName (options.hostname, function (data) {
+                    if (data.error) return utils.outputError (data.error);
+                    if (!data.numResults) return utils.outputError (sprintf ("Host %s is not registered.", options.hostname));
+
+                    testServerConnection ([data.results]);
+
+                });
+
+            }
+
+            break;
+
         // create new server connection
         case "add":
 
@@ -82,7 +116,7 @@ program
                                 if (data.error) return utils.outputError (data.error);
 
                                 // respond with success message
-                                return utils.output (sprintf ("Added %s to server list.", options.hostname));
+                                return utils.outputSuccess (sprintf ("Added %s to server list.", options.hostname.underline));
 
                             }
                         );
@@ -127,9 +161,9 @@ program
                         if (!data.numDeleted) return utils.outputError (sprintf ("Server record not found during delete. Expected at ServerId: %s.", serverId));
 
                         // respond with success message
-                        utils.output (sprintf (
+                        utils.outputSuccess (sprintf (
                             "Deleted %s with %s associated schedule%s from server list.",
-                            options.hostname,
+                            options.hostname.underline,
                             deletedSchedules,
                             (deletedSchedules == 1) ? "" : "s"
                         ));
@@ -148,6 +182,31 @@ program
 
     }
 });
+
+// Test connection to all servers provided in array.
+function testServerConnection (allServerData) {
+
+    var currentServer = allServerData.pop ();
+    if (! utils.valueIsEmpty(currentServer)) {
+
+        utils.output (sprintf ("Testing %s...", currentServer.HostName.underline));
+
+        shell.validateSSHKey (
+            currentServer.SSHKeyFileLocation,
+            currentServer.HostName,
+            currentServer.UserName,
+            function (error) {
+                if (error) utils.outputError (error);
+                else utils.outputSuccess ("SUCCESS");
+
+                testServerConnection (allServerData);
+
+            }
+        );
+    }
+    else return;
+
+}
 
 // process arguments
 program.parse(process.argv);
