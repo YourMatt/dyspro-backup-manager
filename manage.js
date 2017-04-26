@@ -97,6 +97,7 @@ program
 
             // validate that the host name is not already in use
             database.query.servers.getByHostName (options.hostname, function (data) {
+                if (data.error) return utils.outputError (data.error);
                 if (data.numResults) return utils.outputError ("Host name is already registered.");
 
                 // validate the SSH key
@@ -116,7 +117,7 @@ program
                                 if (data.error) return utils.outputError (data.error);
 
                                 // respond with success message
-                                return utils.outputSuccess (sprintf ("Added %s to server list.", options.hostname.underline));
+                                return utils.outputSuccess (sprintf ("Added %s to the server list.", options.hostname.underline));
 
                             }
                         );
@@ -129,7 +130,43 @@ program
         // update an existing server connection
         case "update":
 
-            utils.output ("update");
+            // check for required fields
+            if (utils.valueIsEmpty (options.hostname) ||
+            utils.valueIsEmpty (options.username) ||
+            utils.valueIsEmpty (options.sshkey))
+                return utils.outputError ("Missing required options: --hostname, --username, or --sshkey");
+
+            // validate that the host name already exists
+            database.query.servers.getByHostName (options.hostname, function (data) {
+                if (data.error) return utils.outputError (data.error);
+                if (! data.numResults) return utils.outputError ("Host name not found.");
+
+                // validate the SSH key
+                shell.validateSSHKey (
+                    options.sshkey,
+                    options.hostname,
+                    options.username,
+                    function (error) {
+                        if (!utils.valueIsEmpty (error)) return utils.outputError (error);
+
+                        // run database update
+                        database.query.servers.update (
+                            data.results.ServerId,
+                            options.hostname,
+                            options.username,
+                            options.sshkey,
+                            function (data) {
+                                if (data.error) return utils.outputError (data.error);
+
+                                // respond with success message
+                                return utils.outputSuccess (sprintf ("Updated %s in the server list.", options.hostname.underline));
+
+                            }
+                        );
+
+                    }
+                );
+            });
 
             break;
 

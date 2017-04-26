@@ -47,6 +47,23 @@ exports.query = {
 
         },
 
+        // Updates an existing server.
+        update: function (serverId, hostName, userName, sshKeyFileLocation, callback) {
+
+            databaseAccessor.update ({
+                sql: "UPDATE Servers SET ? WHERE ServerId = ?",
+                values: [{
+                    HostName: hostName,
+                    UserName: userName,
+                    SSHKeyFileLocation: sshKeyFileLocation
+                    },
+                    serverId
+                ]
+            },
+            callback);
+
+        },
+
         // Deletes an existing server.
         delete: function (serverId, callback) {
 
@@ -68,10 +85,10 @@ exports.query = {
         getByServerId: function (serverId, callback) {
 
             databaseAccessor.selectMultiple ({
-                sql:        "SELECT * " +
-                            "FROM   Schedules " +
-                            "WHERE  ServerId = ? ",
-                values:     serverId
+                sql: "SELECT * " +
+                     "FROM   Schedules " +
+                     "WHERE  ServerId = ? ",
+                values: serverId
             },
             callback);
 
@@ -137,6 +154,7 @@ var databaseAccessor = {
 
         // run the query
         this.db.query (query, function (error, rows) {
+            databaseAccessor.close ();
 
             // report error and return if error state
             if (error) return databaseAccessor.handleError (query, error, callback);
@@ -166,17 +184,16 @@ var databaseAccessor = {
 
         });
 
-        this.close ();
-
     },
 
     // run an insert against the database
     insert: function (query, callback) {
 
-        if (! this.init(callback)) return;
+        if (! this.init (callback)) return;
 
         // run the query
         this.db.query (query, function (error, result) {
+            databaseAccessor.close ();
 
             if (! utils.valueIsEmpty(error)) return callback ({
                 insertId: 0,
@@ -190,17 +207,39 @@ var databaseAccessor = {
 
         });
 
-        this.close ();
+    },
+
+    // run an update against the database
+    update: function (query, callback) {
+
+        if (! this.init (callback)) return;
+
+        // run the query
+        this.db.query (query, function (error, result) {
+            databaseAccessor.close ();
+
+            if (! utils.valueIsEmpty(error)) return callback ({
+                numUpdated: 0,
+                error: error.toString()
+            });
+
+            callback ({
+                numUpdated: result.affectedRows,
+                error: ""
+            });
+
+        });
 
     },
 
     // run a delete against the database
     delete: function (query, callback) {
 
-        if (! this.init(callback)) return;
+        if (! this.init (callback)) return;
 
         // run the query
         this.db.query (query, function (error, result) {
+            databaseAccessor.close ();
 
             if (! utils.valueIsEmpty(error)) return callback ({
                 numDeleted: 0,
@@ -213,8 +252,6 @@ var databaseAccessor = {
             });
 
         });
-
-        this.close ();
 
     }
 
