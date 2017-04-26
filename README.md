@@ -3,19 +3,19 @@
 _NOTICE: THIS IS CURRENTLY IN DEVELOPMENT. DO NOT USE._ 
 
 ## Synopsis
-This is a command-line utility for creating offsite backups which pull from external servers and place on a local
+This is a command line utility for creating offsite backups which pull from external servers and place on a local
 network.
 
 ## Motivation
 I wanted to automate backups from my server environment to be stored offsite onto my own home network. At the same time,
 I wanted a single solution that would also manage the backups themselves so that recent backups were kept in close
-intervals while only milestone backups (weekly, monthly, yearly) would be kept as time moves on. With additional
+intervals while only milestone backups (weekly, monthly, etc) would be kept as time moves on. With additional
 notification enhancements in mind, I decided that a robust custom program would be better than using standard shell
 commands with cron.
 
 For me, this is intended to run on a Raspberry Pi hardwired to my router, which pulls files from several servers, and
-passes the backups to my NAS over an SMB mount. This could be used in a variety of other configurations. View the Usage
-instructions below for limitations.
+passes the backups to my NAS over an SMB mount. This could be used in a variety of other configurations. View the
+[Usage](#usage) instructions below for limitations.
 
 ## Installation
 
@@ -51,11 +51,15 @@ This includes two utilities. The `dysprobackup` command will perform the backup 
 `dysprobackupmanage` command will allow management of the backup schedules and logs.
 
 ### dysprobackupmanage
+Manage all backup operations. None of this is necessary for the `dysprobackup` command to work as long as all data are 
+available within the database. This does include some niceties by validating that connections can be made and that all 
+paths exist.
 
 `dysprobackupmanage -h`  
 View help file for full list of options.
 
 #### Manage Servers
+Manage server connections that backup operations can be assigned against.
 
 `dysprobackupmanage servers -h`  
 View help file for server operations.
@@ -69,11 +73,36 @@ Test SSH connectivity to all registered servers. If the host name is provided, o
 `dysprobackupmanage servers add -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`  
 Register a new server. This will also validate the connection and add to known_hosts if necessary.
 
-`dysprobackupmanage servers update -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`
-Updates an existing server matching the host name.
+`dysprobackupmanage servers update -n host_name -u ssh_user_name -k /path/to/ssh/private/key/file`  
+Update an existing server matching the host name.
 
 `dysprobackupmanage servers delete -n host_name`  
-Unregisters a server. Any schedules related to the server will be deleted after confirmation.
+Unregister a server. Any schedules related to the server will be deleted after confirmation.
+
+#### Manage Schedules
+Manages the backup operations to be executed whenever the `dysprobackup` command is run.
+
+`dysprobackupmanage schedules -h`  
+View help file for the schedule operations.
+
+`dysprobackupmanage schedules list [-n host_name]`  
+Display all backup schedule operations. If the host name is provided, only operations related to this host will be
+displayed.
+
+`dysprobackupmanage schedules test [-n host_name] [-i schedule_id]`  
+Test that remote and local paths are accessible for all backup schedules. If the host name is provided, only operations
+related to this host will be tested. If the schedule ID is provided, only this specific backup operation will be tested.
+
+`dysprobackupmanage schedules add -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m]`  
+Register a new backup operation. This will also validate that paths are accessible. If using the delete remote files
+option (-d) or the manage local files option (-m), you will be prompted to confirm, as these are potentially destructive
+options.
+
+`dysprobackupmanage schedules update -i schedule_id -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m]`  
+Update an existing backup operation. If not known, first use the list action to find the schedule ID.  
+
+`dysprobackupmanage schedules delete -i schedule_id`  
+Unregister a backup operation.
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

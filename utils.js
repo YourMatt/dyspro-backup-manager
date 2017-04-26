@@ -23,7 +23,8 @@ exports.escapeShellParameterValue = function (source) {
 // Writes output to console
 exports.output = function (message) {
 
-    console.log (message.trim ());
+    if (typeof message == "string") message = message.trim ();
+    console.log (message);
 
 };
 exports.outputSuccess = function (message) {

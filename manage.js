@@ -12,6 +12,7 @@ var program = require ("commander")
 ,   shell = require ("./shell.js")
 ,   utils = require ("./utils.js");
 
+
 // handle server management requests
 program
 .command ("servers [action]")
@@ -30,11 +31,11 @@ program
             // retrieve all servers from the database
             database.query.servers.get (function (data) {
                 if (data.error) return utils.outputError (data);
-                if (!data.numResults) utils.output ("No servers are currently registered.");
+                if (!data.numResults) return utils.output ("No servers are currently registered.");
 
                 // build the results table
                 var resultsTable = new table ({
-                    head: ["ID", "Host Name", "User Name", "SSH Key Path"],
+                    head: ["ID", "Host Name", "User", "SSH Key Path"],
                     colAligns: ["right"],
                     style: {
                         head: [process.env.COLOR_TABLE_HEADING],
@@ -43,9 +44,12 @@ program
                     }
                 });
                 for (var i = 0; i < data.results.length; i++) {
-                    resultsTable.push (
-                        [data.results[i].ServerId, data.results[i].HostName, data.results[i].UserName, data.results[i].SSHKeyFileLocation]
-                    );
+                    resultsTable.push ([
+                        data.results[i].ServerId,
+                        data.results[i].HostName,
+                        data.results[i].UserName,
+                        data.results[i].PathSSHKeyFile
+                    ]);
                 }
                 utils.output (resultsTable.toString());
 
@@ -215,9 +219,94 @@ program
         // notify invalid usage
         default:
 
-            utils.outputError ("Invalid option. Check --help for correct usage.");
+            utils.outputError (sprintf ("Invalid option. Check %s for correct usage.", "servers --help".underline));
 
     }
+});
+
+
+// handle schedule management requests
+program
+.command ("schedules [action]")
+.description ("manage backup schedules where [action] is on of: list, test, add, update, delete")
+.option ("-n, --hostname <hostname>", "registered server http host name - required for: add, update - optional for list, test")
+.option ("-r, --remotepath <remotepath>", "directory where to pick up files from the server - required for: add, update")
+.option ("-l, --localpath <localpath>", "directory where to drop off files on the local system - required for: add, update")
+.option ("-d, --deleteremote", "set option to delete server files after downloading - optional for: add, update")
+.option ("-m, --managelocal", "set option to automatically remove outdated local backups - optional for: add, update")
+.option ("-i, --id <scheduleid>", "existing schedule id - required for: update, delete - optional for test")
+.action (function (action, options) {
+    if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided
+
+    switch (action) {
+
+        // display all available schedules
+        case "list":
+
+            // retrieve all schedules from the database
+            database.query.schedules.getByServerHostName (options.hostname, function (data) {
+                if (data.error) return utils.outputError (data);
+                if (!data.numResults) return utils.output (sprintf (
+                    "No schedules are currently registered%s.",
+                    (utils.valueIsEmpty(options.hostname)) ? "" : sprintf (" against %s", options.hostname.underline)));
+
+                // build the results table
+                var resultsTable = new table ({
+                    head: ["ID", "Host Name", "Remote Path", "Local Path", "Delete Remote", "Manage Local"],
+                    colAligns: ["right"],
+                    style: {
+                        head: [process.env.COLOR_TABLE_HEADING],
+                        border: [process.env.COLOR_TABLE_BORDER],
+                        compact: true
+                    }
+                });
+                for (var i = 0; i < data.results.length; i++) {
+                    resultsTable.push ([
+                        data.results[i].ScheduleId,
+                        data.results[i].HostName,
+                        data.results[i].PathServerPickup,
+                        data.results[i].PathLocalDropoff,
+                        (data.results[i].DeleteServerPickups) ? "YES" : "NO",
+                        (data.results[i].ManageLocalBackups) ? "YES" : "NO"
+                    ]);
+                }
+                utils.output (resultsTable.toString());
+
+            });
+
+            break;
+
+        // test existing schedules
+        case "test":
+
+
+            break;
+
+        // create new schedule
+        case "add":
+
+
+            break;
+
+        // update an existing schedule
+        case "update":
+
+
+            break;
+
+        // delete an existing schedule
+        case "delete":
+
+
+            break;
+
+        // notify invalid usage
+        default:
+
+            utils.outputError (sprintf ("Invalid option. Check %s for correct usage.", "schedules --help".underline));
+
+    }
+
 });
 
 // Test connection to all servers provided in array.
