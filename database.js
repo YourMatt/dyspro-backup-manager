@@ -14,8 +14,7 @@ exports.query = {
                 sql: "SELECT     * " +
                      "FROM       Servers " +
                      "ORDER BY   HostName ASC "
-            },
-            callback);
+            }, callback);
 
         },
 
@@ -27,8 +26,7 @@ exports.query = {
                      "FROM   Servers " +
                      "WHERE  HostName = ? ",
                 values: hostName
-            },
-            callback);
+            }, callback);
 
         },
 
@@ -40,10 +38,9 @@ exports.query = {
                 values: {
                     HostName: hostName,
                     UserName: userName,
-                    SSHKeyFileLocation: sshKeyFileLocation
+                    PathSSHKeyFile: sshKeyFileLocation
                 }
-            },
-            callback);
+            }, callback);
 
         },
 
@@ -55,12 +52,11 @@ exports.query = {
                 values: [{
                     HostName: hostName,
                     UserName: userName,
-                    SSHKeyFileLocation: sshKeyFileLocation
+                    PathSSHKeyFile: sshKeyFileLocation
                     },
                     serverId
                 ]
-            },
-            callback);
+            }, callback);
 
         },
 
@@ -68,11 +64,10 @@ exports.query = {
         delete: function (serverId, callback) {
 
             databaseAccessor.delete ({
-                sql:    "DELETE FROM    Servers " +
-                        "WHERE          ServerId = ? ",
+                sql: "DELETE FROM    Servers " +
+                     "WHERE          ServerId = ? ",
                 values: serverId
-            },
-            callback);
+            }, callback);
 
         }
 
@@ -80,6 +75,34 @@ exports.query = {
 
     // Query against schedules.
     schedules: {
+
+        // Pulls list of all schedules.
+        get: function (callback) {
+
+            databaseAccessor.selectMultiple ({
+                sql: "SELECT     sc.*, se.HostName " +
+                     "FROM       Schedules sc " +
+                     "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
+                     "ORDER BY   HostName ASC " +
+                     ",          PathServerPickup ASC "
+            }, callback);
+
+        },
+
+        // Pulls list of all schedules related to a server host name.
+        getByServerHostName: function (hostName, callback) {
+            if (utils.valueIsEmpty(hostName)) return this.get (callback);
+
+            databaseAccessor.selectMultiple ({
+                sql: "SELECT     sc.*, se.HostName " +
+                     "FROM       Schedules sc " +
+                     "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
+                     "WHERE      se.HostName = ? " +
+                     "ORDER BY   PathServerPickup ASC ",
+                values: hostName
+            }, callback);
+
+        },
 
         // Pulls a list of all schedules related to a server.
         getByServerId: function (serverId, callback) {
@@ -89,8 +112,7 @@ exports.query = {
                      "FROM   Schedules " +
                      "WHERE  ServerId = ? ",
                 values: serverId
-            },
-            callback);
+            }, callback);
 
         }
 
