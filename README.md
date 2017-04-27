@@ -34,7 +34,7 @@ passes the backups to my NAS over an SMB mount. This could be used in a variety 
 This requires a MySQL database to manage server connections, backups schedules, and provide a log of backup activity.
 
 1.  Create the database user that this will use.
-2.  Run the docs/create-database.sql script.
+2.  Run the [docs/create-database.sql](./docs/create-database.sql) script.
 
 ### Shell Scripts
 
@@ -61,6 +61,15 @@ View help file for full list of options.
 #### Manage Servers
 Manage server connections that backup operations can be assigned against.
 
+`dysprobackup manage servers`
+
+| Option | Description |
+| --- | --- |
+| -h --help | View help |
+| -n --hostname | Host name in format of _sub.primary.tld_ |
+| -u --username | SSH user name |
+| -k --sshkey | Local absolute path to SSH private key file |
+
 `dysprobackupmanage servers -h`  
 View help file for server operations.
 
@@ -81,6 +90,18 @@ Unregister a server. Any schedules related to the server will be deleted after c
 
 #### Manage Schedules
 Manages the backup operations to be executed whenever the `dysprobackup` command is run.
+
+`dysprobackup manage schedules`
+
+| Option | Description |
+| --- | --- |
+| -h --help | View help |
+| -n --hostname | Host name in format of _sub.primary.tld_ - host name must already be a registered server when used against a schedule |
+| -r --remotepath | Remote absolute path to directory or file to pick up when running the backup schedule |
+| -l --localpath | Local absolute path to the directory to place the backup file(s) after downloading |
+| -d --deleteremote | If provided for add or update operations, will cause the schedule to remove any remote files after downloading |
+| -m --managelocal | If provided for add or update operations, will cause the downloaded files to be cleaned out in accordance of the retention policy |
+| -i --id | The schedule ID to reference in update, delete, and test operations |
 
 `dysprobackupmanage schedules -h`  
 View help file for the schedule operations.
