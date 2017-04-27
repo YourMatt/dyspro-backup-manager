@@ -279,6 +279,38 @@ program
         // test existing schedules
         case "test":
 
+            // test a single schedule if provided
+            if (!utils.valueIsEmpty (options.id)) {
+                database.query.schedules.getByScheduleId (options.id, function (data) {
+                    if (data.error) return utils.outputError (data.error);
+                    if (!data.numResults) return utils.outputError (sprintf ("Schedule %s does not exist.", options.id));
+
+                    testServerSchedule ([data.results]);
+
+                });
+            }
+
+            // test every schedule associated to a host if provided
+            else if (!utils.valueIsEmpty (options.hostname)) {
+                database.query.schedules.getByServerHostName (options.hostname, function (data) {
+                    if (data.error) return utils.outputError (data.error);
+                    if (!data.numResults) return utils.outputError (sprintf ("No schedules exist for %s.", options.hostname.underline));
+
+                    testServerSchedule (data.results);
+
+                });
+            }
+
+            // if no options set, test all schedules
+            else {
+                database.query.schedules.get (function (data) {
+                    if (data.error) return utils.outputError (data.error);
+                    if (!data.numResults) return utils.outputError ("No schedules exist.");
+
+                    testServerSchedule (data.results);
+
+                });
+            }
 
             break;
 
@@ -313,7 +345,7 @@ program
 function testServerConnection (allServerData) {
 
     var currentServer = allServerData.pop ();
-    if (! utils.valueIsEmpty(currentServer)) {
+    if (! utils.valueIsEmpty (currentServer)) {
 
         utils.output (sprintf ("Testing %s...", currentServer.HostName.underline));
 
@@ -329,6 +361,59 @@ function testServerConnection (allServerData) {
 
             }
         );
+    }
+    else return;
+
+}
+
+// Test operations required of server schedule.
+function testServerSchedule (allScheduleData) {
+
+    var currentSchedule = allScheduleData.pop ();
+    if (! utils.valueIsEmpty (currentSchedule)) {
+
+        utils.output (sprintf (
+            "Testing schedule %s against %s...",
+            currentSchedule.ScheduleId.toString().underline,
+            currentSchedule.HostName.underline
+        ));
+
+        // test the local path
+        utils.output (sprintf (
+            "Testing local path of %s...",
+            currentSchedule.PathLocalDropoff.underline
+        ));
+
+        shell.validateLocalPath (
+            currentSchedule.PathLocalDropoff,
+            function (response, isError) {
+                if (isError) utils.outputError (response);
+                else utils.outputSuccess ("SUCCESS");
+
+                // test the remote path
+                utils.output (sprintf (
+                    "Testing remote path of %s...",
+                    currentSchedule.PathServerPickup.underline
+                ));
+
+                shell.validateRemotePath (
+                    currentSchedule.PathSSHKeyFile,
+                    currentSchedule.HostName,
+                    currentSchedule.UserName,
+                    currentSchedule.PathServerPickup,
+                    function (response, isError) {
+                        if (isError) utils.outputError (response);
+                        else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
+
+                        // test the next schedule
+                        testServerSchedule (allScheduleData);
+
+                    }
+                );
+
+            }
+        );
+
     }
     else return;
 

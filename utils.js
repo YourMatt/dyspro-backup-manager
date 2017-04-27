@@ -20,6 +20,14 @@ exports.escapeShellParameterValue = function (source) {
 
 };
 
+// Ensures file paths are in expected format.
+exports.normalizePath = function (path) {
+
+    // trim and remove any trailing slash
+    return path.trim().replace(/\/$/, "");
+
+};
+
 // Writes output to console
 exports.output = function (message) {
 
@@ -29,11 +37,11 @@ exports.output = function (message) {
 };
 exports.outputSuccess = function (message) {
 
-    exports.output (colors.success (message.trim ()));
+    exports.output (colors.success (message.toString().trim ()));
 
 };
 exports.outputError = function (message) {
 
-    exports.output (colors.error (message.trim ()));
+    exports.output (colors.error (message.toString().trim ()));
 
 };

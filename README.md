@@ -64,7 +64,7 @@ Manage server connections that backup operations can be assigned against.
 `dysprobackup manage servers`
 
 | Option | Description |
-| --- | --- |
+|---|---|
 | -h --help | View help |
 | -n --hostname | Host name in format of _sub.primary.tld_ |
 | -u --username | SSH user name |
@@ -94,7 +94,7 @@ Manages the backup operations to be executed whenever the `dysprobackup` command
 `dysprobackup manage schedules`
 
 | Option | Description |
-| --- | --- |
+|---|---|
 | -h --help | View help |
 | -n --hostname | Host name in format of _sub.primary.tld_ - host name must already be a registered server when used against a schedule |
 | -r --remotepath | Remote absolute path to directory or file to pick up when running the backup schedule |

@@ -38,7 +38,7 @@ exports.query = {
                 values: {
                     HostName: hostName,
                     UserName: userName,
-                    PathSSHKeyFile: sshKeyFileLocation
+                    PathSSHKeyFile: utils.normalizePath (sshKeyFileLocation)
                 }
             }, callback);
 
@@ -52,7 +52,7 @@ exports.query = {
                 values: [{
                     HostName: hostName,
                     UserName: userName,
-                    PathSSHKeyFile: sshKeyFileLocation
+                    PathSSHKeyFile: utils.normalizePath (sshKeyFileLocation)
                     },
                     serverId
                 ]
@@ -80,11 +80,11 @@ exports.query = {
         get: function (callback) {
 
             databaseAccessor.selectMultiple ({
-                sql: "SELECT     sc.*, se.HostName " +
+                sql: "SELECT     * " +
                      "FROM       Schedules sc " +
                      "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
-                     "ORDER BY   HostName ASC " +
-                     ",          PathServerPickup ASC "
+                     "ORDER BY   sc.HostName ASC " +
+                     ",          sc.PathServerPickup ASC "
             }, callback);
 
         },
@@ -94,11 +94,11 @@ exports.query = {
             if (utils.valueIsEmpty(hostName)) return this.get (callback);
 
             databaseAccessor.selectMultiple ({
-                sql: "SELECT     sc.*, se.HostName " +
+                sql: "SELECT     * " +
                      "FROM       Schedules sc " +
                      "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
                      "WHERE      se.HostName = ? " +
-                     "ORDER BY   PathServerPickup ASC ",
+                     "ORDER BY   sc.PathServerPickup ASC ",
                 values: hostName
             }, callback);
 
@@ -112,6 +112,19 @@ exports.query = {
                      "FROM   Schedules " +
                      "WHERE  ServerId = ? ",
                 values: serverId
+            }, callback);
+
+        },
+
+        // Pulls a single schedule by ID.
+        getByScheduleId: function (scheduleId, callback) {
+
+            databaseAccessor.selectSingle ({
+                sql: "SELECT     * " +
+                     "FROM       Schedules sc " +
+                     "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
+                     "WHERE      sc.ScheduleId = ? ",
+                values: scheduleId
             }, callback);
 
         }
