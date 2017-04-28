@@ -101,12 +101,12 @@ Manages the backup operations to be executed whenever the `dysprobackup` command
 | -l --localpath | Local absolute path to the directory to place the backup file(s) after downloading |
 | -d --deleteremote | If provided for add or update operations, will cause the schedule to remove any remote files after downloading |
 | -m --managelocal | If provided for add or update operations, will cause the downloaded files to be cleaned out in accordance of the retention policy |
-| -i --id | The schedule ID to reference in update, delete, and test operations |
+| -i --id | The schedule ID to reference in update, delete, test, and list operations |
 
 `dysprobackupmanage schedules -h`  
 View help file for the schedule operations.
 
-`dysprobackupmanage schedules list [-n host_name]`  
+`dysprobackupmanage schedules list [-n host_name] [-i schedule_id]`  
 Display all backup schedule operations. If the host name is provided, only operations related to this host will be
 displayed.
 

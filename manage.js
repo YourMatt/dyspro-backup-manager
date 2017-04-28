@@ -240,94 +240,32 @@ program
 .action (function (action, options) {
     if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided
 
+    scheduling.options = options;
     switch (action) {
 
         // display all available schedules
         case "list":
-
-            // retrieve all schedules from the database
-            database.query.schedules.getByServerHostName (options.hostname, function (data) {
-                if (data.error) return utils.outputError (data.error);
-                if (!data.numResults) return utils.output (sprintf (
-                    "No schedules are currently registered%s.",
-                    (utils.valueIsEmpty(options.hostname)) ? "" : sprintf (" against %s", options.hostname.underline)));
-
-                // build the results table
-                var resultsTable = new table ({
-                    head: ["ID", "Host Name", "Remote Path", "Local Path", "Delete Remote", "Manage Local"],
-                    colAligns: ["right"],
-                    style: {
-                        head: [process.env.COLOR_TABLE_HEADING],
-                        border: [process.env.COLOR_TABLE_BORDER],
-                        compact: true
-                    }
-                });
-                for (var i = 0; i < data.results.length; i++) {
-                    resultsTable.push ([
-                        data.results[i].ScheduleId,
-                        data.results[i].HostName,
-                        data.results[i].PathServerPickup,
-                        data.results[i].PathLocalDropoff,
-                        (data.results[i].DeleteServerPickups) ? "YES" : "NO",
-                        (data.results[i].ManageLocalBackups) ? "YES" : "NO"
-                    ]);
-                }
-                utils.output (resultsTable.toString());
-
-            });
-
+            async.series ([
+                scheduling.loadSchedules,
+                scheduling.list
+            ]);
             break;
 
         // test existing schedules
         case "test":
-
-            // test a single schedule if provided
-            if (!utils.valueIsEmpty (options.id)) {
-                database.query.schedules.getByScheduleId (options.id, function (data) {
-                    if (data.error) return utils.outputError (data.error);
-                    if (!data.numResults) return utils.outputError (sprintf ("Schedule %s does not exist.", options.id));
-
-                    testServerSchedule ([data.results]);
-
-                });
-            }
-
-            // test every schedule associated to a host if provided
-            else if (!utils.valueIsEmpty (options.hostname)) {
-                database.query.schedules.getByServerHostName (options.hostname, function (data) {
-                    if (data.error) return utils.outputError (data.error);
-                    if (!data.numResults) return utils.outputError (sprintf ("No schedules exist for %s.", options.hostname.underline));
-
-                    testServerSchedule (data.results);
-
-                });
-            }
-
-            // if no options set, test all schedules
-            else {
-                database.query.schedules.get (function (data) {
-                    if (data.error) return utils.outputError (data.error);
-                    if (!data.numResults) return utils.outputError ("No schedules exist.");
-
-                    testServerSchedule (data.results);
-
-                });
-            }
-
+            async.series ([
+                scheduling.loadSchedules,
+                scheduling.test
+            ]);
             break;
 
         // create new schedule
         case "add":
-
-            scheduling.options = options;
-            async.series (
-                [
-                    scheduling.validateInputForAdd,
-                    scheduling.checkScheduleConfirmDeleteRemote,
-                    scheduling.checkScheduleConfirmManageLocal
-                ]
-            );
-
+            async.series ([
+                scheduling.validateInputForAdd,
+                scheduling.checkScheduleConfirmDeleteRemote,
+                scheduling.checkScheduleConfirmManageLocal
+            ]);
             break;
 
         // update an existing schedule
@@ -376,63 +314,84 @@ function testServerConnection (allServerData) {
 
 }
 
-// Test operations required of server schedule.
-function testServerSchedule (allScheduleData) {
 
-    var currentSchedule = allScheduleData.pop ();
-    if (! utils.valueIsEmpty (currentSchedule)) {
-
-        utils.output (sprintf (
-            "Testing schedule %s against %s...",
-            currentSchedule.ScheduleId.toString().underline,
-            currentSchedule.HostName.underline
-        ));
-
-        // test the local path
-        utils.output (sprintf (
-            "Testing local path of %s...",
-            currentSchedule.PathLocalDropoff.underline
-        ));
-
-        shell.validateLocalPath (
-            currentSchedule.PathLocalDropoff,
-            function (response, isError) {
-                if (isError) utils.outputError (response);
-                else utils.outputSuccess ("SUCCESS");
-
-                // test the remote path
-                utils.output (sprintf (
-                    "Testing remote path of %s...",
-                    currentSchedule.PathServerPickup.underline
-                ));
-
-                shell.validateRemotePath (
-                    currentSchedule.PathSSHKeyFile,
-                    currentSchedule.HostName,
-                    currentSchedule.UserName,
-                    currentSchedule.PathServerPickup,
-                    function (response, isError) {
-                        if (isError) utils.outputError (response);
-                        else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
-
-                        // test the next schedule
-                        testServerSchedule (allScheduleData);
-
-                    }
-                );
-
-            }
-        );
-
-    }
-    else return;
-
-}
 
 // Performs all actions related to schedule management
 var scheduling = {
 
     options: {}, // command input options
+    schedules: [], // list of schedules to perform an operation against
+
+    // Loads schedules related to a given option.
+    loadSchedules: function (callback)
+    {
+
+        // test a single schedule if provided
+        if (!utils.valueIsEmpty (scheduling.options.id)) {
+            database.query.schedules.getByScheduleId (scheduling.options.id, function (data) {
+                if (data.error) return utils.outputError (data.error);
+                if (!data.numResults) return utils.outputError (sprintf ("Schedule %s does not exist.", scheduling.options.id));
+
+                scheduling.schedules = [data.results];
+                callback ();
+
+            });
+        }
+
+        // test every schedule associated to a host if provided
+        else if (!utils.valueIsEmpty (scheduling.options.hostname)) {
+            database.query.schedules.getByServerHostName (scheduling.options.hostname, function (data) {
+                if (data.error) return utils.outputError (data.error);
+                if (!data.numResults) return utils.outputError (sprintf ("No schedules exist for %s.", scheduling.options.hostname.underline));
+
+                scheduling.schedules = data.results;
+                callback ();
+
+            });
+        }
+
+        // if no options set, test all schedules
+        else {
+            database.query.schedules.get (function (data) {
+                if (data.error) return utils.outputError (data.error);
+                if (!data.numResults) return utils.outputError ("No schedules exist.");
+
+                scheduling.schedules = data.results;
+                callback ();
+
+            });
+        }
+
+    },
+
+    // Displays all loaded schedules as a table.
+    list: function () {
+
+        // build the results table
+        var resultsTable = new table ({
+            head: ["ID", "Host Name", "Remote Path", "Local Path", "Delete Remote", "Manage Local"],
+            colAligns: ["right"],
+            style: {
+                head: [process.env.COLOR_TABLE_HEADING],
+                border: [process.env.COLOR_TABLE_BORDER],
+                compact: true
+            }
+        });
+        for (var i = 0; i < scheduling.schedules.length; i++) {
+            resultsTable.push ([
+                scheduling.schedules[i].ScheduleId,
+                scheduling.schedules[i].HostName,
+                utils.normalizePath (scheduling.schedules[i].PathServerPickup),
+                utils.normalizePath (scheduling.schedules[i].PathLocalDropoff),
+                (scheduling.schedules[i].DeleteServerPickups) ? "YES" : "NO",
+                (scheduling.schedules[i].ManageLocalBackups) ? "YES" : "NO"
+            ]);
+        }
+
+        // display the table
+        utils.output (resultsTable.toString());
+
+    },
 
     validateInputForAdd: function (callback)
     {
@@ -514,6 +473,58 @@ var scheduling = {
                 callback ();
 
             });
+        }
+
+    },
+
+    // Test operations required of server schedule.
+    test: function () {
+
+        var currentSchedule = scheduling.schedules.pop ();
+        if (! utils.valueIsEmpty (currentSchedule)) {
+
+            utils.output (sprintf (
+                "Testing schedule %s against %s...",
+                currentSchedule.ScheduleId.toString().underline,
+                currentSchedule.HostName.underline
+            ));
+
+            // test the local path
+            utils.output (sprintf (
+                "Testing local path of %s...",
+                currentSchedule.PathLocalDropoff.underline
+            ));
+
+            shell.validateLocalPath (
+                currentSchedule.PathLocalDropoff,
+                function (response, isError) {
+                    if (isError) utils.outputError (response);
+                    else utils.outputSuccess ("SUCCESS");
+
+                    // test the remote path
+                    utils.output (sprintf (
+                        "Testing remote path of %s...",
+                        currentSchedule.PathServerPickup.underline
+                    ));
+
+                    shell.validateRemotePath (
+                        currentSchedule.PathSSHKeyFile,
+                        currentSchedule.HostName,
+                        currentSchedule.UserName,
+                        currentSchedule.PathServerPickup,
+                        function (response, isError) {
+                            if (isError) utils.outputError (response);
+                            else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
+
+                            // test the next schedule
+                            scheduling.test ();
+
+                        }
+                    );
+
+                }
+            );
+
         }
 
     }
