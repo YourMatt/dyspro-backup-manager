@@ -83,7 +83,7 @@ exports.query = {
                 sql: "SELECT     * " +
                      "FROM       Schedules sc " +
                      "INNER JOIN Servers se ON se.ServerId = sc.ServerId " +
-                     "ORDER BY   sc.HostName ASC " +
+                     "ORDER BY   se.HostName ASC " +
                      ",          sc.PathServerPickup ASC "
             }, callback);
 

@@ -5,6 +5,8 @@ require ("dotenv").config();
 
 // include libraries
 var program = require ("commander")
+,   prompt = require ("prompt")
+,   async = require ("async")
 ,   sprintf = require ("util").format
 ,   colors = require ("colors")
 ,   table = require ("cli-table")
@@ -245,7 +247,7 @@ program
 
             // retrieve all schedules from the database
             database.query.schedules.getByServerHostName (options.hostname, function (data) {
-                if (data.error) return utils.outputError (data);
+                if (data.error) return utils.outputError (data.error);
                 if (!data.numResults) return utils.output (sprintf (
                     "No schedules are currently registered%s.",
                     (utils.valueIsEmpty(options.hostname)) ? "" : sprintf (" against %s", options.hostname.underline)));
@@ -317,6 +319,14 @@ program
         // create new schedule
         case "add":
 
+            scheduling.options = options;
+            async.series (
+                [
+                    scheduling.validateInputForAdd,
+                    scheduling.checkScheduleConfirmDeleteRemote,
+                    scheduling.checkScheduleConfirmManageLocal
+                ]
+            );
 
             break;
 
@@ -418,6 +428,97 @@ function testServerSchedule (allScheduleData) {
     else return;
 
 }
+
+// Performs all actions related to schedule management
+var scheduling = {
+
+    options: {}, // command input options
+
+    validateInputForAdd: function (callback)
+    {
+
+        // check for required fields
+        if (utils.valueIsEmpty (scheduling.options.hostname) ||
+            utils.valueIsEmpty (scheduling.options.remotepath) ||
+            utils.valueIsEmpty (scheduling.options.localpath))
+            return utils.outputError ("Missing required options: --hostname, --remotepath, or --localpath");
+
+        callback ();
+
+    },
+
+    checkScheduleConfirmDeleteRemote: function (callback)
+    {
+
+        prompt.start ();
+        prompt.message = "";
+        prompt.delimiter = "";
+        prompt.colors = false;
+
+        if (scheduling.options.deleteremote) {
+            prompt.get ({
+                properties: {
+                    confirm: {
+                        pattern: /^(yes|no|y|n)$/gi,
+                        description: "You have opted to delete remote files as they are downloaded. If the remote " +
+                        "path is to a file, it will be deleted after every backup. If the remote path is a " +
+                        "directory, all contents will be deleted. Are you sure?",
+                        message: 'Type yes/no',
+                        required: true,
+                        default: 'no'
+                    }
+                }
+
+            }, function (error, result) {
+                result = result.confirm.toLowerCase ();
+                if (result != "y" && result != "yes") {
+                    return utils.outputError ("Aborted add schedule option. Run again without the --deleteremote option.");
+                }
+
+                // continue
+                callback ();
+
+            });
+        }
+
+    },
+
+    checkScheduleConfirmManageLocal: function (callback) {
+
+        prompt.start ();
+        prompt.message = "";
+        prompt.delimiter = "";
+        prompt.colors = false;
+
+        if (scheduling.options.managelocal) {
+            prompt.get ({
+                properties: {
+                    confirm: {
+                        pattern: /^(yes|no|y|n)$/gi,
+                        description: "You have opted to manage local files. Any backup files stored locally are subject " +
+                        "to deletion over time in accordance to your retention schedule defined in the .env file. Are " +
+                        "you sure?",
+                        message: 'Type yes/no',
+                        required: true,
+                        default: 'no'
+                    }
+                }
+
+            }, function (error, result) {
+                result = result.confirm.toLowerCase ();
+                if (result != "y" && result != "yes") {
+                    return utils.outputError ("Aborted add schedule option. Run again without the --managelocal option.");
+                }
+
+                // continue
+                callback ();
+
+            });
+        }
+
+    }
+
+};
 
 // process arguments
 program.parse(process.argv);
