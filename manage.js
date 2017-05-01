@@ -5,15 +5,11 @@ require ("dotenv").config();
 
 // include libraries
 var program = require ("commander")
-,   prompt = require ("prompt") // remove after reorg
 ,   async = require ("async")
-,   sprintf = require ("util").format // remove after reorg
-,   colors = require ("colors") // remove after reorg
-,   table = require ("cli-table") // remove after reorg
-,   database = require ("./database.js") // remove after reorg
-,   shell = require ("./shell.js") // remove after reorg
-,   utils = require ("./utils.js") // remove after reorg
-,   scheduling = require ("./scheduling.js");
+,   servermanager = require ("./servermanager.js")
+,   schedulemanager = require ("./schedulemanager.js")
+,   utils = require ("./utils.js")
+,   sprintf = require ("util").format;
 
 // handle server management requests
 program
@@ -25,202 +21,55 @@ program
 .action (function (action, options) {
     if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided
 
+    servermanager.options = options;
     switch (action) {
 
         // display all available server connections
         case "list":
-
-            // retrieve all servers from the database
-            database.query.servers.get (function (data) {
-                if (data.error) return utils.outputError (data);
-                if (!data.numResults) return utils.output ("No servers are currently registered.");
-
-                // build the results table
-                var resultsTable = new table ({
-                    head: ["ID", "Host Name", "User", "SSH Key Path"],
-                    colAligns: ["right"],
-                    style: {
-                        head: [process.env.COLOR_TABLE_HEADING],
-                        border: [process.env.COLOR_TABLE_BORDER],
-                        compact: true
-                    }
-                });
-                for (var i = 0; i < data.results.length; i++) {
-                    resultsTable.push ([
-                        data.results[i].ServerId,
-                        data.results[i].HostName,
-                        data.results[i].UserName,
-                        data.results[i].PathSSHKeyFile
-                    ]);
-                }
-                utils.output (resultsTable.toString());
-
-            });
-
+            async.series ([
+                servermanager.loadServers,
+                servermanager.list
+            ]);
             break;
 
         // test existing server connections
         case "test":
-
-            // test all servers if no hostname set
-            if (utils.valueIsEmpty(options.hostname)) {
-
-                utils.output ("Testing all registered servers...");
-
-                database.query.servers.get (function (data) {
-                    if (data.error) return utils.outputError (data.error);
-                    if (!data.numResults) return utils.output ("No servers are currently registered.");
-
-                    testServerConnection (data.results);
-
-                });
-
-            }
-
-            // test single server if hostname provided
-            else {
-
-                database.query.servers.getByHostName (options.hostname, function (data) {
-                    if (data.error) return utils.outputError (data.error);
-                    if (!data.numResults) return utils.outputError (sprintf ("Host %s is not registered.", options.hostname));
-
-                    testServerConnection ([data.results]);
-
-                });
-
-            }
-
+            async.series ([
+                servermanager.loadServers,
+                servermanager.test
+            ]);
             break;
 
         // create new server connection
         case "add":
-
-            // check for required fields
-            if (utils.valueIsEmpty (options.hostname) ||
-                utils.valueIsEmpty (options.username) ||
-                utils.valueIsEmpty (options.sshkey))
-                return utils.outputError ("Missing required options: --hostname, --username, or --sshkey");
-
-            // validate that the host name is not already in use
-            database.query.servers.getByHostName (options.hostname, function (data) {
-                if (data.error) return utils.outputError (data.error);
-                if (data.numResults) return utils.outputError ("Host name is already registered.");
-
-                // validate the SSH key
-                shell.validateSSHKey (
-                    options.sshkey,
-                    options.hostname,
-                    options.username,
-                    function (error) {
-                        if (!utils.valueIsEmpty (error)) return utils.outputError (error);
-
-                        // run database insert
-                        database.query.servers.insert (
-                            options.hostname,
-                            options.username,
-                            options.sshkey,
-                            function (data) {
-                                if (data.error) return utils.outputError (data.error);
-
-                                // respond with success message
-                                return utils.outputSuccess (sprintf ("Added %s to the server list.", options.hostname.underline));
-
-                            }
-                        );
-                    }
-                );
-            });
-
+            async.series ([
+                servermanager.validateInputForAdd,
+                servermanager.validateCredentials,
+                servermanager.add
+            ]);
             break;
 
         // update an existing server connection
         case "update":
-
-            // check for required fields
-            if (utils.valueIsEmpty (options.hostname) ||
-            utils.valueIsEmpty (options.username) ||
-            utils.valueIsEmpty (options.sshkey))
-                return utils.outputError ("Missing required options: --hostname, --username, or --sshkey");
-
-            // validate that the host name already exists
-            database.query.servers.getByHostName (options.hostname, function (data) {
-                if (data.error) return utils.outputError (data.error);
-                if (! data.numResults) return utils.outputError ("Host name not found.");
-
-                // validate the SSH key
-                shell.validateSSHKey (
-                    options.sshkey,
-                    options.hostname,
-                    options.username,
-                    function (error) {
-                        if (!utils.valueIsEmpty (error)) return utils.outputError (error);
-
-                        // run database update
-                        database.query.servers.update (
-                            data.results.ServerId,
-                            options.hostname,
-                            options.username,
-                            options.sshkey,
-                            function (data) {
-                                if (data.error) return utils.outputError (data.error);
-
-                                // respond with success message
-                                return utils.outputSuccess (sprintf ("Updated %s in the server list.", options.hostname.underline));
-
-                            }
-                        );
-
-                    }
-                );
-            });
-
+            async.series ([
+                servermanager.validateInputForUpdate,
+                servermanager.loadServers,
+                servermanager.validateCredentials,
+                servermanager.update
+            ]);
             break;
 
         // delete a server connection
         case "delete":
-
-            // check for required fields
-            if (utils.valueIsEmpty (options.hostname))
-                return utils.outputError ("Missing required options: --hostname");
-
-            // find the server by host name
-            database.query.servers.getByHostName (options.hostname, function (data) {
-                if (data.error) return utils.outputError (data.error);
-                if (!data.numResults) return utils.outputError ("Host name not found.");
-
-                var serverId = data.results.ServerId;
-
-                // check the number of schedules affected
-                database.query.schedules.getByServerId (serverId, function (data) {
-                    if (data.error) return utils.outputError (data.error);
-
-                    // TODO: provide confirmation prompt if schedules will be deleted
-
-                    var deletedSchedules = data.numResults;
-
-                    // delete the schedule
-                    database.query.servers.delete (serverId, function (data) {
-                        if (data.error) return utils.outputError (data.error);
-                        if (!data.numDeleted) return utils.outputError (sprintf ("Server record not found during delete. Expected at ServerId: %s.", serverId));
-
-                        // respond with success message
-                        utils.outputSuccess (sprintf (
-                            "Deleted %s with %s associated schedule%s from server list.",
-                            options.hostname.underline,
-                            deletedSchedules,
-                            (deletedSchedules == 1) ? "" : "s"
-                        ));
-
-                    });
-
-                });
-            });
-
+            async.series ([
+                servermanager.validateInputForDelete,
+                servermanager.loadServers,
+                servermanager.delete
+            ]);
             break;
 
         // notify invalid usage
         default:
-
             utils.outputError (sprintf ("Invalid option. Check %s for correct usage.", "servers --help".underline));
 
     }
@@ -240,31 +89,31 @@ program
 .action (function (action, options) {
     if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided
 
-    scheduling.options = options;
+    schedulemanager.options = options;
     switch (action) {
 
         // display all available schedules
         case "list":
             async.series ([
-                scheduling.loadSchedules,
-                scheduling.list
+                schedulemanager.loadSchedules,
+                schedulemanager.list
             ]);
             break;
 
         // test existing schedules
         case "test":
             async.series ([
-                scheduling.loadSchedules,
-                scheduling.test
+                schedulemanager.loadSchedules,
+                schedulemanager.test
             ]);
             break;
 
         // create new schedule
         case "add":
             async.series ([
-                scheduling.validateInputForAdd,
-                scheduling.checkScheduleConfirmDeleteRemote,
-                scheduling.checkScheduleConfirmManageLocal
+                schedulemanager.validateInputForAdd,
+                schedulemanager.checkScheduleConfirmDeleteRemote,
+                schedulemanager.checkScheduleConfirmManageLocal
             ]);
             break;
 
@@ -282,40 +131,11 @@ program
 
         // notify invalid usage
         default:
-
             utils.outputError (sprintf ("Invalid option. Check %s for correct usage.", "schedules --help".underline));
 
     }
 
 });
-
-// Test connection to all servers provided in array.
-function testServerConnection (allServerData) {
-
-    var currentServer = allServerData.pop ();
-    if (! utils.valueIsEmpty (currentServer)) {
-
-        utils.output (sprintf ("Testing %s...", currentServer.HostName.underline));
-
-        shell.validateSSHKey (
-            currentServer.SSHKeyFileLocation,
-            currentServer.HostName,
-            currentServer.UserName,
-            function (error) {
-                if (error) utils.outputError (error);
-                else utils.outputSuccess ("SUCCESS");
-
-                testServerConnection (allServerData);
-
-            }
-        );
-    }
-    else return;
-
-}
-
-
-
 
 // process arguments
 program.parse(process.argv);

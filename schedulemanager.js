@@ -17,7 +17,7 @@ var base = {
     loadSchedules: function (callback)
     {
 
-        // test a single schedule if provided
+        // load a single schedule if provided
         if (!utils.valueIsEmpty (base.options.id)) {
             database.query.schedules.getByScheduleId (base.options.id, function (data) {
                 if (data.error) return utils.outputError (data.error);
@@ -29,7 +29,7 @@ var base = {
             });
         }
 
-        // test every schedule associated to a host if provided
+        // load every schedule associated to a host if provided
         else if (!utils.valueIsEmpty (base.options.hostname)) {
             database.query.schedules.getByServerHostName (base.options.hostname, function (data) {
                 if (data.error) return utils.outputError (data.error);
@@ -41,7 +41,7 @@ var base = {
             });
         }
 
-        // if no options set, test all schedules
+        // if no options set, load all schedules
         else {
             database.query.schedules.get (function (data) {
                 if (data.error) return utils.outputError (data.error);
@@ -178,45 +178,45 @@ var base = {
         if (! utils.valueIsEmpty (currentSchedule)) {
 
             utils.output (sprintf (
-            "Testing schedule %s against %s...",
-            currentSchedule.ScheduleId.toString().underline,
-            currentSchedule.HostName.underline
+                "Testing schedule %s against %s...",
+                currentSchedule.ScheduleId.toString().underline,
+                currentSchedule.HostName.underline
             ));
 
             // test the local path
             utils.output (sprintf (
-            "Testing local path of %s...",
-            currentSchedule.PathLocalDropoff.underline
+                "Testing local path of %s...",
+                currentSchedule.PathLocalDropoff.underline
             ));
 
             shell.validateLocalPath (
-            currentSchedule.PathLocalDropoff,
-            function (response, isError) {
-                if (isError) utils.outputError (response);
-                else utils.outputSuccess ("SUCCESS");
-
-                // test the remote path
-                utils.output (sprintf (
-                "Testing remote path of %s...",
-                currentSchedule.PathServerPickup.underline
-                ));
-
-                shell.validateRemotePath (
-                currentSchedule.PathSSHKeyFile,
-                currentSchedule.HostName,
-                currentSchedule.UserName,
-                currentSchedule.PathServerPickup,
+                currentSchedule.PathLocalDropoff,
                 function (response, isError) {
                     if (isError) utils.outputError (response);
-                    else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
+                    else utils.outputSuccess ("SUCCESS");
 
-                    // test the next schedule
-                    base.test ();
+                    // test the remote path
+                    utils.output (sprintf (
+                    "Testing remote path of %s...",
+                    currentSchedule.PathServerPickup.underline
+                    ));
+
+                    shell.validateRemotePath (
+                        currentSchedule.PathSSHKeyFile,
+                        currentSchedule.HostName,
+                        currentSchedule.UserName,
+                        currentSchedule.PathServerPickup,
+                        function (response, isError) {
+                            if (isError) utils.outputError (response);
+                            else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
+
+                            // test the next schedule
+                            base.test ();
+
+                        }
+                    );
 
                 }
-                );
-
-            }
             );
 
         }
