@@ -16,14 +16,14 @@ CREATE TABLE Schedules
 ,            PathServerPickup VARCHAR(500) NOT NULL
 ,            ManageLocalBackups BIT NOT NULL DEFAULT 0
 ,            DeleteServerPickups BIT NOT NULL DEFAULT 0
-,            FOREIGN KEY (ServerId) REFERENCES Servers(ServerId));
+,            FOREIGN KEY (ServerId) REFERENCES Servers(ServerId) ON DELETE CASCADE);
 
 CREATE TABLE BackupLog
 (            BackupLogId INT AUTO_INCREMENT PRIMARY KEY
 ,            ScheduleId INT NOT NULL
 ,            DateStart DATETIME NOT NULL
 ,            DateFinish DATETIME
-,            FOREIGN KEY (ScheduleId) REFERENCES Schedules(ScheduleId));
+,            FOREIGN KEY (ScheduleId) REFERENCES Schedules(ScheduleId) ON DELETE CASCADE);
 
 CREATE TABLE BackupLogFiles
 (            BackupLogFileId INT AUTO_INCREMENT PRIMARY KEY
@@ -32,6 +32,6 @@ CREATE TABLE BackupLogFiles
 ,            FileSize BIGINT UNSIGNED NOT NULL
 ,            DateCreated DATETIME NOT NULL
 ,            DateDeleted DATETIME
-,            FOREIGN KEY (BackupLogId) REFERENCES BackupLog(BackupLogId));
+,            FOREIGN KEY (BackupLogId) REFERENCES BackupLog(BackupLogId) ON DELETE CASCADE);
 
 SHOW TABLES;
