@@ -1,6 +1,18 @@
 var childProcess = require ("child_process")
 ,   utils = require ("./utils.js");
 
+// Appends to local file.
+exports.writeLog = function (message) {
+
+    childProcess.exec (
+        "echo $(date '+%Y-%m-%d %H:%M:%S')' " + message + "' >> " + process.env.LOG_FILE,
+        function (error, stdout, stderr) {
+            if (! utils.valueIsEmpty (error)) utils.outputError (error);
+        }
+    )
+
+};
+
 // Attempts a connection against the host using the SSH key. If any error occurs, an error message will be passed
 // to the callback function.
 exports.validateSSHKey = function (sshKey, hostName, userName, callback) {

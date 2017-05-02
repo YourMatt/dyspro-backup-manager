@@ -28,7 +28,7 @@ exports.normalizePath = function (path) {
 
 };
 
-// Writes output to console
+// Writes output to console.
 exports.output = function (message) {
 
     if (typeof message == "string") message = message.trim ();
