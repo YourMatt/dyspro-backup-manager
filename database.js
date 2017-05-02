@@ -127,6 +127,51 @@ exports.query = {
                 values: scheduleId
             }, callback);
 
+        },
+
+        // Inserts new schedule.
+        insert: function (serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, deleteServerPickups, callback) {
+
+            databaseAccessor.insert ({
+                sql: "INSERT INTO Schedules SET ?",
+                values: {
+                    ServerId: serverId,
+                    PathLocalDropoff: utils.normalizePath (pathLocalDropoff),
+                    PathServerPickup: utils.normalizePath (pathServerPickup),
+                    ManageLocalBackups: manageLocalBackups,
+                    DeleteServerPickups: deleteServerPickups
+                }
+            }, callback);
+
+        },
+
+        // Updates an existing schedule.
+        update: function (scheduleId, serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, deleteServerPickups, callback) {
+
+            databaseAccessor.update ({
+                sql: "UPDATE Schedules SET ? WHERE ScheduleId = ?",
+                values: [{
+                    ServerId: serverId,
+                    PathLocalDropoff: utils.normalizePath (pathLocalDropoff),
+                    PathServerPickup: utils.normalizePath (pathServerPickup),
+                    ManageLocalBackups: manageLocalBackups,
+                    DeleteServerPickups: deleteServerPickups
+                    },
+                    scheduleId
+                ]
+            }, callback);
+
+        },
+
+        // Deletes an existing schedule.
+        delete: function (scheduleId, callback) {
+
+            databaseAccessor.delete ({
+                sql: "DELETE FROM    Schedules " +
+                     "WHERE          ScheduleId = ? ",
+                values: scheduleId
+            }, callback);
+
         }
 
     }
@@ -145,7 +190,18 @@ var databaseAccessor = {
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME
+            database: process.env.DB_NAME,
+            typeCast: function castField (field, useDefaultTypeCasting) {
+
+                // set bit fields to act as booleans
+                if ((field.type === "BIT") && (field.length === 1)) {
+                    var bytes = field.buffer();
+                    return (bytes[0] === 1);
+                }
+
+                return (useDefaultTypeCasting ());
+
+            }
         });
 
         // connect to the database

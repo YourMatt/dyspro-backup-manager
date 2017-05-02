@@ -56,7 +56,7 @@ var base = {
     },
 
     // Displays all loaded schedules as a table.
-    list: function () {
+    list: function (callback) {
 
         // build the results table
         var resultsTable = new table ({
@@ -82,6 +82,8 @@ var base = {
         // display the table
         utils.output (resultsTable.toString());
 
+        callback ();
+
     },
 
     // Validates that required parameters for add operations exists.
@@ -98,6 +100,90 @@ var base = {
 
     },
 
+    // Validates that required parameters for update operations exists.
+    validateInputForUpdate: function (callback)
+    {
+
+        // check for required fields
+        if (utils.valueIsEmpty (base.options.id) ||
+            utils.valueIsEmpty (base.options.hostname) ||
+            utils.valueIsEmpty (base.options.remotepath) ||
+            utils.valueIsEmpty (base.options.localpath))
+            return utils.outputError ("Missing required options: --id, --hostname, --remotepath, or --localpath");
+
+        callback ();
+
+    },
+
+    // Validates that required parameters for delete operations exists.
+    validateInputForDelete: function (callback)
+    {
+
+        // check for required fields
+        if (utils.valueIsEmpty (base.options.id))
+            return utils.outputError ("Missing required option: --id");
+
+        callback ();
+
+    },
+
+    // Validates that the operation paths exist.
+    validatePaths: function (callback) {
+
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for validate paths operation list.");
+        var schedule = base.schedules[0];
+
+        // validate the local path
+        shell.validateLocalPath (
+            schedule.PathLocalDropoff,
+            function (response, isError) {
+                if (isError) return utils.outputError (response);
+
+                // test the remote path
+                shell.validateRemotePath (
+                    schedule.PathSSHKeyFile,
+                    schedule.HostName,
+                    schedule.UserName,
+                    schedule.PathServerPickup,
+                    function (response, isError) {
+                        if (isError) return utils.outputError (response);
+
+                        callback ();
+
+                    }
+                );
+            }
+        );
+
+    },
+
+    // Adds the input fields as a mock schedule so that it can be tested.
+    loadInputToTest: function (callback)
+    {
+
+        // check that host name exists
+        database.query.servers.getByHostName (base.options.hostname, function (hostData) {
+            if (hostData.error) return utils.outputError (hostData.error);
+            if (!hostData.numResults) return utils.outputError (sprintf ("Host %s is not registered.", base.options.hostname));
+
+            base.schedules = [{
+                ScheduleId: "",
+                HostName: base.options.hostname,
+                PathLocalDropoff: utils.normalizePath (base.options.localpath),
+                PathServerPickup: utils.normalizePath (base.options.remotepath),
+                ManageLocalBackups: ! utils.valueIsEmpty (base.options.managelocal),
+                DeleteServerPickups: ! utils.valueIsEmpty (base.options.deleteremote),
+                ServerId: hostData.results.ServerId,
+                PathSSHKeyFile: utils.normalizePath (hostData.results.PathSSHKeyFile),
+                UserName: hostData.results.UserName
+            }];
+
+            callback ();
+
+        });
+
+    },
+
     // Prompts the user to confirm that they want to use the delete remote files option.
     checkScheduleConfirmDeleteRemote: function (callback)
     {
@@ -107,31 +193,30 @@ var base = {
         prompt.delimiter = "";
         prompt.colors = false;
 
-        if (base.options.deleteremote) {
-            prompt.get ({
-                properties: {
-                    confirm: {
-                        pattern: /^(yes|no|y|n)$/gi,
-                        description: "You have opted to delete remote files as they are downloaded. If the remote " +
+        if (!base.options.deleteremote) return callback ();
+
+        prompt.get ({
+            properties: {
+                confirm: {
+                    pattern: /^(yes|no|y|n)$/gi,
+                    description: "You have opted to delete remote files as they are downloaded. If the remote " +
                         "path is to a file, it will be deleted after every backup. If the remote path is a " +
                         "directory, all contents will be deleted. Are you sure?",
-                        message: "Type yes/no",
-                        required: true,
-                        default: "no"
-                    }
+                    message: "Type yes/no",
+                    required: true,
+                    default: "no"
                 }
+            }
+        }, function (error, result) {
+            result = result.confirm.toLowerCase ();
+            if (result != "y" && result != "yes") {
+                return utils.outputError ("Aborted add schedule option. Run again without the --deleteremote option.");
+            }
 
-            }, function (error, result) {
-                result = result.confirm.toLowerCase ();
-                if (result != "y" && result != "yes") {
-                    return utils.outputError ("Aborted add schedule option. Run again without the --deleteremote option.");
-                }
+            // continue
+            callback ();
 
-                // continue
-                callback ();
-
-            });
-        }
+        });
 
     },
 
@@ -143,36 +228,109 @@ var base = {
         prompt.delimiter = "";
         prompt.colors = false;
 
-        if (base.options.managelocal) {
-            prompt.get ({
-                properties: {
-                    confirm: {
-                        pattern: /^(yes|no|y|n)$/gi,
-                        description: "You have opted to manage local files. Any backup files stored locally are subject " +
-                        "to deletion over time in accordance to your retention schedule defined in the .env file. Are " +
-                        "you sure?",
-                        message: "Type yes/no",
-                        required: true,
-                        default: "no"
-                    }
-                }
+        if (!base.options.managelocal) return callback ();
 
-            }, function (error, result) {
-                result = result.confirm.toLowerCase ();
-                if (result != "y" && result != "yes") {
-                    return utils.outputError ("Aborted add schedule option. Run again without the --managelocal option.");
+        prompt.get ({
+            properties: {
+                confirm: {
+                    pattern: /^(yes|no|y|n)$/gi,
+                    description: "You have opted to manage local files. Any backup files stored locally are subject " +
+                    "to deletion over time in accordance to your retention schedule defined in the .env file. Are " +
+                    "you sure?",
+                    message: "Type yes/no",
+                    required: true,
+                    default: "no"
                 }
+            }
 
-                // continue
+        }, function (error, result) {
+            result = result.confirm.toLowerCase ();
+            if (result != "y" && result != "yes") {
+                return utils.outputError ("Aborted add schedule option. Run again without the --managelocal option.");
+            }
+
+            // continue
+            callback ();
+
+        });
+
+    },
+
+    // Registers a new schedule.
+    add: function (callback) {
+
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for add operation list.");
+        var schedule = base.schedules[0];
+
+        database.query.schedules.insert (
+            schedule.ServerId,
+            schedule.PathLocalDropoff,
+            schedule.PathServerPickup,
+            schedule.ManageLocalBackups,
+            schedule.DeleteServerPickups,
+            function (data) {
+                if (data.error) return utils.outputError (data.error);
+
+                // respond with success message
+                utils.outputSuccess (sprintf ("Added schedule %s to the schedule list.", data.insertId.toString().underline));
                 callback ();
 
-            });
-        }
+            }
+        );
+
+    },
+
+    // Updates an existing schedule.
+    update: function (callback) {
+
+        // validate the currently loaded schedule
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for update operation list.");
+        var schedule = base.schedules[0];
+
+        database.query.schedules.update (
+            base.options.id,
+            schedule.ServerId,
+            schedule.PathLocalDropoff,
+            schedule.PathServerPickup,
+            schedule.ManageLocalBackups,
+            schedule.DeleteServerPickups,
+            function (data) {
+                if (data.error) return utils.outputError (data.error);
+
+                // respond with success message
+                utils.outputSuccess (sprintf ("Updated schedule %s in the schedule list.", base.options.id.toString().underline));
+                callback ();
+
+            }
+        );
+
+    },
+
+    // Deletes the currently loaded schedule.
+    delete: function (callback) {
+
+        // validate the currently loaded server
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for delete operation list.");
+        var scheduleId = base.schedules[0].ScheduleId;
+
+        // delete the schedule
+        database.query.schedules.delete (scheduleId, function (data) {
+            if (data.error) return utils.outputError (data.error);
+            if (!data.numDeleted) return utils.outputError (sprintf ("Schedule record not found during delete. Expected at ScheduleId: %s.", scheduleId));
+
+            // respond with success message
+            utils.outputSuccess (sprintf (
+                "Deleted schedule %s from schedule list.",
+                scheduleId.toString().underline
+            ));
+            callback ();
+
+        });
 
     },
 
     // Tests server schedules to validate that the remote and local directories are accessible.
-    test: function () {
+    test: function (callback) {
 
         var currentSchedule = base.schedules.pop ();
         if (! utils.valueIsEmpty (currentSchedule)) {
@@ -211,7 +369,7 @@ var base = {
                             else utils.outputSuccess (sprintf ("SUCCESS - Type is %s", response));
 
                             // test the next schedule
-                            base.test ();
+                            base.test (callback);
 
                         }
                     );
@@ -220,6 +378,7 @@ var base = {
             );
 
         }
+        else callback ();
 
     }
 

@@ -112,20 +112,35 @@ program
         case "add":
             async.series ([
                 schedulemanager.validateInputForAdd,
+                schedulemanager.loadInputToTest,
+                schedulemanager.validatePaths,
                 schedulemanager.checkScheduleConfirmDeleteRemote,
-                schedulemanager.checkScheduleConfirmManageLocal
+                schedulemanager.checkScheduleConfirmManageLocal,
+                schedulemanager.add
             ]);
             break;
 
         // update an existing schedule
         case "update":
-
+            async.series ([
+                schedulemanager.validateInputForUpdate,
+                schedulemanager.loadSchedules,
+                schedulemanager.loadInputToTest,
+                schedulemanager.validatePaths,
+                schedulemanager.checkScheduleConfirmDeleteRemote,
+                schedulemanager.checkScheduleConfirmManageLocal,
+                schedulemanager.update
+            ]);
 
             break;
 
         // delete an existing schedule
         case "delete":
-
+            async.series ([
+                schedulemanager.validateInputForDelete,
+                schedulemanager.loadSchedules,
+                schedulemanager.delete
+            ]);
 
             break;
 
