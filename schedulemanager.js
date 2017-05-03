@@ -144,7 +144,7 @@ var base = {
                     schedule.PathSSHKeyFile,
                     schedule.HostName,
                     schedule.UserName,
-                    schedule.PathServerPickup,
+                    utils.escapeShellParameterValue (schedule.PathServerPickup),
                     function (response, isError) {
                         if (isError) return utils.outputError (response);
 

@@ -97,7 +97,7 @@ Manages the backup operations to be executed whenever the `dysprobackup` command
 |---|---|
 | -h --help | View help |
 | -n --hostname | Host name in format of _sub.primary.tld_ - host name must already be a registered server when used against a schedule |
-| -r --remotepath | Remote absolute path to directory or file to pick up when running the backup schedule |
+| -r --remotepath | Remote absolute path to directory or file to pick up when running the backup schedule - If a directory, only real files in the directory will be picked up, non-recursive |
 | -l --localpath | Local absolute path to the directory to place the backup file(s) after downloading |
 | -d --deleteremote | If provided for add or update operations, will cause the schedule to remove any remote files after downloading |
 | -m --managelocal | If provided for add or update operations, will cause the downloaded files to be cleaned out in accordance of the retention policy |
@@ -124,6 +124,10 @@ Update an existing backup operation. If not known, first use the list action to 
 
 `dysprobackupmanage schedules delete -i schedule_id`  
 Unregister a backup operation.
+
+### dysprobackup
+Runs all schedules. This is meant to be assigned to a cron job, but can also be run directly. All ouput is sent to
+screen if running directly, and only sent to the log file if automated.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

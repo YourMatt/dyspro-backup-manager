@@ -1,8 +1,9 @@
 # Environment variables
 .env
 
-# Log files
+# Log files and test backup folders
 dysprobackup.log
+backups
 
 # Dependency directories
 node_modules

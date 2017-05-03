@@ -1,5 +1,6 @@
 var childProcess = require ("child_process")
-,   utils = require ("./utils.js");
+,   utils = require ("./utils.js")
+,   sprintf = require ("util").format;
 
 // Appends to local file.
 exports.writeLog = function (message) {
@@ -10,6 +11,106 @@ exports.writeLog = function (message) {
             if (! utils.valueIsEmpty (error)) utils.outputError (error);
         }
     )
+
+};
+
+// Finds list of all files that will be copied.
+// callback (string: file type [file, directory, unknown], array: [{size, name}], string: error message)
+exports.getCopyFileList = function (sshKey, hostName, userName, remotePath, callback) {
+
+    exports.getRemoteFileType (sshKey, hostName, userName, remotePath, function (fileType, error) {
+        if (!utils.valueIsEmpty(error)) return callback ("unknown", [], error);
+        if (fileType == "unknown") return callback ("unknown", [], sprintf ("File at %s %s is an unknown type.", hostName, remotePath));
+
+        // find list of files in the directory
+        childProcess.exec (sprintf (
+            "%s \"find %s -maxdepth 1 -type f -exec wc -c {} \\;\"",
+            GetSSHCommand (sshKey, hostName, userName),
+            utils.escapeShellParameterValue (remotePath)),
+            function (error, stdout, stderr) {
+                if (error) return callback (fileType, [], error);
+
+                var fileList = [];
+                var rawFiles = stdout.split ("\n");
+                for (var i = 0; i < rawFiles.length; i++) {
+                    if (!rawFiles[i]) continue;
+
+                    var fileParts = rawFiles[i].split (" ");
+                    if (fileParts.length < 2) continue;
+
+                    // add the file to the file list
+                    fileList.push ({
+                        size: parseInt (fileParts.shift ()), // remove the file size
+                        name: fileParts.join (" ") // add any spaces back in for the file name
+                    });
+
+                }
+
+                callback (fileType, fileList);
+
+             }
+        );
+
+    });
+
+};
+
+// Finds the remote file type.
+// callback (string: file type [file, directory, unknown], string: error message)
+exports.getRemoteFileType = function (sshKey, hostName, userName, remotePath, callback) {
+
+    // run the file command to check the mime type
+    childProcess.exec (sprintf (
+        "%s file -bi %s",
+        GetSSHCommand (sshKey, hostName, userName),
+        utils.escapeShellParameterValue (remotePath)),
+        function (error, stdout, stderr) {
+            if (error) return callback ("unknown", error.toString());
+            if (utils.valueIsEmpty(stdout)) return callback ("unknown", sprintf ("Unknown error while checking the remote file type at %s %s.", hostName, remotePath));
+
+            // check mime type from format of: general/specific; charset
+            var mimeType = stdout.split ("; ");
+            var mimeParts = mimeType[0].split ("/");
+
+            // exit if not in expected format
+            if (mimeParts.length != 2) {
+                if (mimeParts[0].indexOf ("No such file") >= 0) return callback ("unknown", sprintf ("File does not exist at %s %s.", hostName, remotePath));
+                else return callback ("unknown", sprintf ("Unexpected MIME type of \"%s\" at %s %s. Could not evaluate file type.", mimeType[0].trim(), hostName, remotePath));
+            }
+
+            // evaluate general type for directory (including symlinks) or file
+            if (mimeParts[0] == "inode") callback ("directory");
+            else callback ("file");
+
+        }
+    )
+
+};
+
+exports.copyFiles = function (sshKey, hostName, userName, remotePath, localPath, callback) {
+
+    //return callback ("scp -pv -i " + utils.escapeShellParameterValue (sshKey) + " " + userName + "@" + hostName + ":" + remotePath + " " + localPath);
+
+    // download files
+    childProcess.exec (
+        sprintf (
+            "scp -p -i %s %s@%s:%s %s",
+            utils.escapeShellParameterValue (utils.normalizePath (sshKey)),
+            userName,
+            hostName,
+            utils.escapeShellParameterValue (remotePath),
+            utils.escapeShellParameterValue (localPath)
+        ),
+        function (error, stdout, stderr) {
+            if (! utils.valueIsEmpty (error)) return callback (error);
+
+            console.log (stdout);
+            console.log (stderr);
+
+            callback ("Complete");
+
+        }
+    );
 
 };
 
