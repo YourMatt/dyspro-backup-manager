@@ -174,6 +174,55 @@ exports.query = {
 
         }
 
+    },
+
+    // Query against the backup log table
+    backuplogs: {
+
+        // Inserts a new log entry.
+        // callback (object: {int:insertId, string:error})
+        insert: function (scheduleId, callback) {
+
+            databaseAccessor.insert ({
+                sql: "INSERT INTO BackupLog SET DateStart = NOW(), ?",
+                values: {
+                    ScheduleId: scheduleId
+                }
+            }, callback);
+
+        },
+
+        // Updates an existing log entry with completion date.
+        // callback (object: {int:numUpdated, string:error})
+        updateAsFinished: function (backupLogId, callback) {
+
+            databaseAccessor.update ({
+                sql: "UPDATE BackupLog SET DateFinish = NOW() WHERE BackupLogId = ?",
+                values: backupLogId
+            }, callback);
+
+        }
+
+    },
+
+    // Query against the backup log files table
+    backuplogfiles: {
+
+        // Inserts a new log file entry
+        // callback (object: {int:insertId, string:error})
+        insert: function (backupLogId, fileName, fileSize, callback) {
+
+            databaseAccessor.insert ({
+                sql: "INSERT INTO BackupLogFiles SET DateCreated = NOW(), ?",
+                values: {
+                    BackupLogId: backupLogId,
+                    FileName: fileName,
+                    FileSize: fileSize
+                }
+            }, callback);
+
+        }
+
     }
 
 };
@@ -232,13 +281,16 @@ var databaseAccessor = {
 
     },
 
+    // Run a select query against the database, returning only a single row.
+    // callback (object: {int:numResults, object:results, string:error})
     selectSingle: function (query, callback) {
 
         this.selectMultiple (query, callback, true);
 
     },
 
-    // run a query against the database
+    // Run a select query against the database.
+    // callback (object: {int:numResults, array:results (or object if returnSingle is set), string:error})
     selectMultiple: function (query, callback, returnSingle) {
 
         if (! this.init (callback)) return;
@@ -277,7 +329,8 @@ var databaseAccessor = {
 
     },
 
-    // run an insert against the database
+    // Run an insert query against the database.
+    // callback (object: {int:insertId, string:error})
     insert: function (query, callback) {
 
         if (! this.init (callback)) return;
@@ -300,7 +353,8 @@ var databaseAccessor = {
 
     },
 
-    // run an update against the database
+    // Run an update query against the database.
+    // callback (object: {int:numUpdated, string:error})
     update: function (query, callback) {
 
         if (! this.init (callback)) return;
@@ -323,7 +377,8 @@ var databaseAccessor = {
 
     },
 
-    // run a delete against the database
+    // Run a delete query against the database.
+    // callback (object: {int:numDeleted, string:error})
     delete: function (query, callback) {
 
         if (! this.init (callback)) return;

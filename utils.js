@@ -20,6 +20,13 @@ exports.escapeShellParameterValue = function (source) {
 
 };
 
+// prepares a file name to be set in an SCP command
+exports.escapeSCPRemotePath = function (source) {
+
+    return source.replace (/ /g, "\\\\\\ ");
+
+};
+
 // Ensures file paths are in expected format.
 exports.normalizePath = function (path) {
 

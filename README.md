@@ -129,5 +129,7 @@ Unregister a backup operation.
 Runs all schedules. This is meant to be assigned to a cron job, but can also be run directly. All ouput is sent to
 screen if running directly, and only sent to the log file if automated.
 
+Backup files will be placed in [local folder base]/[host name]/[log id]/
+
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

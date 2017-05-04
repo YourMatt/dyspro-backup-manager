@@ -87,27 +87,23 @@ exports.getRemoteFileType = function (sshKey, hostName, userName, remotePath, ca
 
 };
 
-exports.copyFiles = function (sshKey, hostName, userName, remotePath, localPath, callback) {
+// Copy a file from a remote server, placing into the local path directory.
+// callback (string: error message)
+exports.copyFile = function (sshKey, hostName, userName, remotePath, localPath, callback) {
 
-    //return callback ("scp -pv -i " + utils.escapeShellParameterValue (sshKey) + " " + userName + "@" + hostName + ":" + remotePath + " " + localPath);
-
-    // download files
     childProcess.exec (
         sprintf (
             "scp -p -i %s %s@%s:%s %s",
             utils.escapeShellParameterValue (utils.normalizePath (sshKey)),
             userName,
             hostName,
-            utils.escapeShellParameterValue (remotePath),
+            utils.escapeSCPRemotePath (remotePath),
             utils.escapeShellParameterValue (localPath)
         ),
         function (error, stdout, stderr) {
             if (! utils.valueIsEmpty (error)) return callback (error);
 
-            console.log (stdout);
-            console.log (stderr);
-
-            callback ("Complete");
+            callback ();
 
         }
     );

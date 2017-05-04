@@ -3,65 +3,44 @@
 // load configuration values
 require ("dotenv").config();
 
-var shell = require ("./shell.js")
+// include libraries
+var async = require ("async")
+,   shell = require ("./shell.js")
 ,   utils = require ("./utils.js")
+,   backupmanager = require ("./backupmanager.js")
 ,   schedulemanager = require ("./schedulemanager.js")
 ,   sprintf = require ("util").format;
 
-shell.writeLog ("Started backup process.");
+// mark process as started in log file
+shell.writeLog ("STARTING BACKUP PROCESS ----------------------------------------------------------------------------"); // header line will total 120 chars including date
 
+// load all schedules and start process
 schedulemanager.loadSchedules (function () {
+    ProcessNextSchedule (schedulemanager.schedules);
+});
 
-    while (schedulemanager.schedules.length) {
-        var schedule = schedulemanager.schedules.shift ();
+// process the next schedule
+function ProcessNextSchedule (schedules) {
 
-        shell.getCopyFileList (
-            schedule.PathSSHKeyFile,
-            schedule.HostName,
-            schedule.UserName,
-            schedule.PathServerPickup,
-            function (fileType, fileList, error) {
-                if (!utils.valueIsEmpty(error)) {
-                    var errorMessage = sprintf ("Error retrieving file list for schedule %s: %s", schedule.ScheduleId, error);
-                    shell.writeLog (errorMessage);
-                    return utils.outputError (errorMessage);
-                }
-
-                utils.outputSuccess ("start");
-                utils.output (fileType);
-                utils.output (fileList);
-                utils.outputSuccess("fin");
-
-            }
-        );
-
-        continue;
-
-        shell.copyFiles (
-            schedule.PathSSHKeyFile,
-            schedule.HostName,
-            schedule.UserName,
-            schedule.PathServerPickup + "/*", // TODO: Include /* only if a directory
-            schedule.PathLocalDropoff + "/" + schedule.HostName, // TODO: Create directory if doesn't exist
-            function (message) {
-
-                console.log (message);
-
-                var numFiles = 5;
-
-                shell.writeLog (sprintf (
-                "Completed backup using schedule %s, %s %s file%s from %s%s to local %s.",
-                schedule.ScheduleId,
-                (schedule.DeleteServerPickups) ? "moving" : "copying",
-                numFiles,
-                (numFiles == 1) ? "" : "s",
-                schedule.HostName,
-                schedule.PathServerPickup,
-                schedule.PathLocalDropoff
-                ));
-
-            }
-        )
+    // if no remaining schedules, close the log and return
+    if (utils.valueIsEmpty (schedules)) {
+        shell.writeLog ("Backup process complete.");
+        return;
     }
 
-});
+    // TODO: Add method to check that a backup schedule isn't already running, by checking latest finish date in log table
+
+    // pull the next schedule and start processing
+    backupmanager.schedule = schedules.shift ();
+    async.series ([
+        backupmanager.logBackupStart,
+        backupmanager.getBackupFileList,
+        backupmanager.createBackupDirectory,
+        backupmanager.processFileBackup,
+        backupmanager.logBackupComplete,
+        function () {
+            ProcessNextSchedule (schedules);
+        }
+    ]);
+
+}
