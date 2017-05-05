@@ -8,7 +8,7 @@ exports.writeLog = function (message) {
     childProcess.exec (
         "echo $(date '+%Y-%m-%d %H:%M:%S')' " + message + "' >> " + process.env.LOG_FILE,
         function (error, stdout, stderr) {
-            if (! utils.valueIsEmpty (error)) utils.outputError (error);
+            if (! utils.valueIsEmpty (error)) utils.outputError (error.toString());
         }
     )
 
@@ -20,15 +20,17 @@ exports.getCopyFileList = function (sshKey, hostName, userName, remotePath, call
 
     exports.getRemoteFileType (sshKey, hostName, userName, remotePath, function (fileType, error) {
         if (!utils.valueIsEmpty(error)) return callback ("unknown", [], error);
-        if (fileType == "unknown") return callback ("unknown", [], sprintf ("File at %s %s is an unknown type.", hostName, remotePath));
+        if (fileType === "unknown") return callback ("unknown", [], sprintf ("File at %s %s is an unknown type.", hostName, remotePath));
 
         // find list of files in the directory
-        childProcess.exec (sprintf (
-            "%s \"find %s -maxdepth 1 -type f -exec wc -c {} \\;\"",
-            GetSSHCommand (sshKey, hostName, userName),
-            utils.escapeShellParameterValue (remotePath)),
+        childProcess.exec (
+            sprintf (
+                "%s \"find %s -maxdepth 1 -type f -exec wc -c {} \\;\"",
+                GetSSHCommand (sshKey, hostName, userName),
+                utils.escapeShellParameterValue (remotePath)
+            ),
             function (error, stdout, stderr) {
-                if (error) return callback (fileType, [], error);
+                if (error) return callback (fileType, [], error.toString());
 
                 var fileList = [];
                 var rawFiles = stdout.split ("\n");
@@ -60,10 +62,12 @@ exports.getCopyFileList = function (sshKey, hostName, userName, remotePath, call
 exports.getRemoteFileType = function (sshKey, hostName, userName, remotePath, callback) {
 
     // run the file command to check the mime type
-    childProcess.exec (sprintf (
-        "%s file -bi %s",
-        GetSSHCommand (sshKey, hostName, userName),
-        utils.escapeShellParameterValue (remotePath)),
+    childProcess.exec (
+        sprintf (
+            "%s \"file -bi %s\"",
+            GetSSHCommand (sshKey, hostName, userName),
+            utils.escapeShellParameterValue (remotePath)
+        ),
         function (error, stdout, stderr) {
             if (error) return callback ("unknown", error.toString());
             if (utils.valueIsEmpty(stdout)) return callback ("unknown", sprintf ("Unknown error while checking the remote file type at %s %s.", hostName, remotePath));
@@ -101,7 +105,27 @@ exports.copyFile = function (sshKey, hostName, userName, remotePath, localPath, 
             utils.escapeShellParameterValue (localPath)
         ),
         function (error, stdout, stderr) {
-            if (! utils.valueIsEmpty (error)) return callback (error);
+            if (! utils.valueIsEmpty (error)) return callback (error.toString());
+
+            callback ();
+
+        }
+    );
+
+};
+
+// Deletes a file from a remote server.
+// callback (string: error message)
+exports.deleteRemoteFile = function (sshKey, hostName, userName, remotePath, callback) {
+
+    childProcess.exec (
+        sprintf (
+            "%s \"rm -f %s\"",
+            GetSSHCommand (sshKey, hostName, userName),
+            utils.escapeShellParameterValue (remotePath)
+        ),
+        function (error, stdout, stderr) {
+            if (! utils.valueIsEmpty (error)) return callback (error.toString());
 
             callback ();
 
@@ -112,6 +136,7 @@ exports.copyFile = function (sshKey, hostName, userName, remotePath, localPath, 
 
 // Attempts a connection against the host using the SSH key. If any error occurs, an error message will be passed
 // to the callback function.
+// callback (string: error message)
 exports.validateSSHKey = function (sshKey, hostName, userName, callback) {
 
     sshKey = utils.normalizePath (sshKey);
@@ -128,8 +153,7 @@ exports.validateSSHKey = function (sshKey, hostName, userName, callback) {
             childProcess.exec (
                 GetSSHCommand (sshKey, hostName, userName) + " \"pwd\"",
                 function (error, stdout, stderr) {
-                    if (! utils.valueIsEmpty (error))
-                        return callback ("Error connecting to host: " + stderr);
+                    if (! utils.valueIsEmpty (error)) return callback ("Error connecting to host: " + stderr);
 
                     // return success
                     callback ();
@@ -144,15 +168,20 @@ exports.validateSSHKey = function (sshKey, hostName, userName, callback) {
 
 // Logs into the remote server and checks if the file/directory exists at the remote path. If successful, the message
 // sent back on the callback will state the file type.
+// callback (string: message, bool: true if error)
 exports.validateRemotePath = function (sshKey, hostName, userName, remotePath, callback) {
 
     sshKey = utils.normalizePath (sshKey);
     remotePath = utils.normalizePath (remotePath);
 
     childProcess.exec (
-        GetSSHCommand (sshKey, hostName, userName) + " file " + utils.escapeShellParameterValue (remotePath),
+        sprintf (
+            "%s \"file %s\"",
+            GetSSHCommand (sshKey, hostName, userName),
+            utils.escapeShellParameterValue (remotePath)
+        ),
         function (error, stdout, stderr) {
-            if (! utils.valueIsEmpty(error)) return callback (error, true);
+            if (! utils.valueIsEmpty(error)) return callback (error.toString(), true);
             if (stdout.indexOf ("cannot open") >= 0) return callback (stdout, true); // treat cannot open response as an error
 
             // check for file type in response
@@ -169,6 +198,7 @@ exports.validateRemotePath = function (sshKey, hostName, userName, remotePath, c
 };
 
 // Validates that the local path exists and is writeable.
+// callback (string: message, bool: true if error)
 exports.validateLocalPath = function (localPath, callback) {
 
     localPath = utils.normalizePath (localPath);
@@ -178,7 +208,7 @@ exports.validateLocalPath = function (localPath, callback) {
         "file " + localPath,
         function (error, stdout, stderr) {
             if (stdout.indexOf ("cannot open") >= 0) return callback (stdout, true); // treat cannot open response as an error
-            if (! utils.valueIsEmpty (error)) return callback (error, true);
+            if (! utils.valueIsEmpty (error)) return callback (error.toString(), true);
             if (stdout.indexOf ("directory") < 0) return callback ("Local path is not a directory.", true);
 
             // TODO: Validate directory is writeable

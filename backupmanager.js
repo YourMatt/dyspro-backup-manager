@@ -14,11 +14,18 @@ var base = {
     backupFiles: [], // set in getBackupFileList
     backupDirectory: "", // set in createBackupDirectory
     numFilesDownloaded: 0, // set in logBackupStart (for reset) and processFileBackups (to increment)
+    halted: false, // set whenever an error condition causes the schedule to stop being processed - needed to ensure that the series loop is not broken from the controller
 
     // Writes log stating that backup has begun for a schedule.
     // callback (no params)
     logBackupStart: function (callback) {
-        if (utils.valueIsEmpty (base.schedule)) return utils.outputError ("No schedule loaded for backup. Aborting backup.");
+        if (utils.valueIsEmpty (base.schedule)) {
+            base.halted = true;
+            utils.outputError ("No schedule loaded for backup. Aborting backup.");
+            callback ();
+        }
+
+        base.halted = false;
 
         database.query.backuplogs.insert (base.schedule.ScheduleId, function (data) {
             if (data.error) { // intentionally not returning after error
@@ -37,6 +44,7 @@ var base = {
     // Writes to log stating that the backup process has finished.
     // callback (no params)
     logBackupComplete: function (callback) {
+        // if halted still allow the backup log entry to be closed out
         if (! base.backupLogId) return callback ();
 
         database.query.backuplogs.updateAsFinished (base.backupLogId, function (data) {
@@ -54,6 +62,7 @@ var base = {
     // Loads all files to be transferred locally.
     // callback (no params)
     getBackupFileList: function (callback) {
+        if (base.halted) return callback ();
 
         shell.getCopyFileList (
             base.schedule.PathSSHKeyFile,
@@ -62,10 +71,14 @@ var base = {
             base.schedule.PathServerPickup,
             function (fileType, fileList, error) {
                 if (!utils.valueIsEmpty(error)) {
-                    return base.logAndDisplayMessage (sprintf ("Error retrieving file list for schedule %s: %s", base.schedule.ScheduleId, error), true);
+                    base.halted = true;
+                    base.logAndDisplayMessage (sprintf ("Error retrieving file list for schedule %s: %s", base.schedule.ScheduleId, error), true);
+                    return callback ();
                 }
                 if (!fileList.length) {
-                    return base.logAndDisplayMessage (sprintf ("No files to retrieve for schedule %s.", base.schedule.ScheduleId));
+                    base.halted = true;
+                    base.logAndDisplayMessage (sprintf ("No files to retrieve for schedule %s.", base.schedule.ScheduleId));
+                    return callback ();
                 }
 
                 base.backupLocationType = fileType;
@@ -80,6 +93,7 @@ var base = {
     // Creates the local directory to place backup files into.
     // callback (no params)
     createBackupDirectory: function (callback) {
+        if (base.halted) return callback ();
 
         var backupDirectory = base.schedule.PathLocalDropoff;
 
@@ -87,7 +101,9 @@ var base = {
         if (! fs.existsSync (backupDirectory)) {
             fs.mkdirSync (backupDirectory);
             if (! fs.existsSync (backupDirectory)) {
-                return base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                base.halted = true;
+                base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                return callback ();
             }
         }
 
@@ -96,7 +112,9 @@ var base = {
         if (! fs.existsSync (backupDirectory)) {
             fs.mkdirSync (backupDirectory);
             if (! fs.existsSync (backupDirectory)) {
-                return base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                base.halted = true;
+                base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                return callback ();
             }
         }
 
@@ -105,7 +123,9 @@ var base = {
         if (! fs.existsSync (backupDirectory)) {
             fs.mkdirSync (backupDirectory);
             if (! fs.existsSync (backupDirectory)) {
-                return base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                base.halted = true;
+                base.logAndDisplayError (sprintf ("Error creating backup folder at %s. Schedule %s is aborting.", backupDirectory, base.schedule.ScheduleId));
+                return callback ();
             }
         }
 
@@ -117,6 +137,7 @@ var base = {
     // Downloads all backup files.
     // callback (no params)
     processFileBackup: function (callback) {
+        if (base.halted) return callback ();
 
         // continue if completed processing all files
         if (utils.valueIsEmpty (base.backupFiles)) {
@@ -144,7 +165,7 @@ var base = {
             backupFile.size,
             function (data) {
                 if (data.error) { // intentionally not returning after error
-                    base.logAndDisplayError (sprintf ("Could not insert database log files record for backup log %s's file %s. Backup was allowed to continue.", base.backupLogId, backupFile.name));
+                    base.logAndDisplayError (sprintf ("Could not insert database log files record for backup log %s's file %s. Backup was allowed to continue. Error message: %s", base.backupLogId, backupFile.name, data.error));
                 }
 
                 // copy the file from remote to local
@@ -156,7 +177,7 @@ var base = {
                     base.backupDirectory,
                     function (error) {
                         if (! utils.valueIsEmpty(error)) {
-                            base.logAndDisplayError (sprintf ("Error downloading %s from %s for backup log %s. Backup was allowed to continue.", backupFile.name, base.schedule.HostName, base.backupLogId));
+                            base.logAndDisplayError (sprintf ("Error downloading %s from %s for backup log %s. Backup was allowed to continue. Error message: %s", backupFile.name, base.schedule.HostName, base.backupLogId, error));
                         }
                         else {
                             base.numFilesDownloaded++;
@@ -164,13 +185,22 @@ var base = {
 
                         // if schedule set to delete remote files, remove the file from the server
                         if (base.schedule.DeleteServerPickups) {
-                            // TODO: Delete file from server
+                            shell.deleteRemoteFile (
+                                base.schedule.PathSSHKeyFile,
+                                base.schedule.HostName,
+                                base.schedule.UserName,
+                                backupFile.name,
+                                function (error) {
+                                    if (error) base.logAndDisplayError (sprintf ("Error deleting %s from %s for backup log %s. Backup was allowed to continue. Error message: %s", backupFile.name, base.schedule.HostName, base.backupLogId, error));
 
-                            // process the next file
-                            base.processFileBackup (callback);
+                                    // process the next file
+                                    base.processFileBackup (callback);
 
+                                }
+                            );
                         }
 
+                        // continue if don't need to delete the remote file
                         else {
 
                             // process the next file

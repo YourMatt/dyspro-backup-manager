@@ -37,10 +37,11 @@ function ProcessNextSchedule (schedules) {
         backupmanager.getBackupFileList,
         backupmanager.createBackupDirectory,
         backupmanager.processFileBackup,
-        backupmanager.logBackupComplete,
+        backupmanager.logBackupComplete
+        ],
         function () {
             ProcessNextSchedule (schedules);
         }
-    ]);
+    );
 
 }
