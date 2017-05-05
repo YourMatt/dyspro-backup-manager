@@ -13,20 +13,36 @@ var base = {
     backupLocationType: "", // will be file, directory, or unknown - set in logBackupFileList
     backupFiles: [], // set in getBackupFileList
     backupDirectory: "", // set in createBackupDirectory
-    numFilesDownloaded: 0, // set in logBackupStart (for reset) and processFileBackups (to increment)
+    numFilesDownloaded: 0, // set in processFileBackups (incremented)
     completionStatusMessage: "", // set in processFileBackup and logAndDisplayError
     halted: false, // set whenever an error condition causes the schedule to stop being processed - needed to ensure that the series loop is not broken from the controller
+
+    // Resets properties to prepare for next schedule run.
+    // callback (no params)
+    init: function (callback) {
+
+        // do not reset the schedule
+        base.backupLogId = 0;
+        base.backupLocationType = "";
+        base.backupFiles = [];
+        base.backupDirectory = "";
+        base.numFilesDownloaded = 0;
+        base.completionStatusMessage = "";
+        base.halted = false;
+
+        callback ();
+
+    },
 
     // Writes log stating that backup has begun for a schedule.
     // callback (no params)
     logBackupStart: function (callback) {
+        if (base.halted) return callback ();
         if (utils.valueIsEmpty (base.schedule)) {
             base.halted = true;
             utils.outputError ("No schedule loaded for backup. Aborting backup.");
-            callback ();
+            return callback ();
         }
-
-        base.halted = false;
 
         database.query.backuplogs.insert (base.schedule.ScheduleId, function (data) {
             if (data.error) { // intentionally not returning after error
@@ -34,8 +50,6 @@ var base = {
             }
 
             base.backupLogId = data.insertId;
-            base.numFilesDownloaded = 0;
-            base.completionStatusMessage = "";
             base.logAndDisplayMessage (sprintf ("Starting schedule %s with log %s.", base.schedule.ScheduleId, base.backupLogId));
             callback ();
 
@@ -55,6 +69,30 @@ var base = {
             }
 
             base.logAndDisplayMessage (sprintf ("Closing schedule %s with log %s.", base.schedule.ScheduleId, base.backupLogId ));
+            callback ();
+
+        });
+
+    },
+
+    // Validates that the schedule is not already running. If it is, then it will not be run again.
+    // callback (no params)
+    checkIfScheduleCurrentlyRunning: function (callback) {
+
+        database.query.backuplogs.getLastByScheduleId (base.schedule.ScheduleId, function (data) {
+            if (data.error) { // intentionally not returning after error
+                base.logAndDisplayError (sprintf ("Could not find latest backup log entry for schedule %s. Error message: %s", base.schedule.ScheduleId, data.error));
+            }
+
+            // not running if never ran
+            if (! data.numResults) return callback ();
+
+            // if no finish date, don't allow to continue
+            if (utils.valueIsEmpty (data.results.DateFinish)) {
+                base.logAndDisplayError (sprintf ("Could not run schedule %s because it is already running. If this is in error, delete log entry %s.", base.schedule.ScheduleId, data.results.BackupLogId));
+                base.halted = true;
+            }
+
             callback ();
 
         });

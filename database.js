@@ -179,6 +179,21 @@ exports.query = {
     // Query against the backup log table
     backuplogs: {
 
+        // Pulls the last log entry for a given schedule.
+        // callback (object: {int:numResults, object:results, string:error})
+        getLastByScheduleId: function (scheduleId, callback) {
+
+            databaseAccessor.selectSingle ({
+                sql: "SELECT    * " +
+                     "FROM      BackupLog " +
+                     "WHERE     ScheduleId = ? " +
+                     "ORDER BY  BackupLogId DESC " +
+                     "LIMIT     1",
+                values: scheduleId
+            }, callback);
+
+        },
+
         // Inserts a new log entry.
         // callback (object: {int:insertId, string:error})
         insert: function (scheduleId, callback) {

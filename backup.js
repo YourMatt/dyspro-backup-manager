@@ -28,11 +28,11 @@ function ProcessNextSchedule (schedules) {
         return;
     }
 
-    // TODO: Add method to check that a backup schedule isn't already running, by checking latest finish date in log table
-
     // pull the next schedule and start processing
     backupmanager.schedule = schedules.shift ();
     async.series ([
+        backupmanager.init,
+        backupmanager.checkIfScheduleCurrentlyRunning,
         backupmanager.logBackupStart,
         backupmanager.getBackupFileList,
         backupmanager.createBackupDirectory,
