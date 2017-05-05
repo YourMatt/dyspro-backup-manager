@@ -14,6 +14,7 @@ var base = {
     backupFiles: [], // set in getBackupFileList
     backupDirectory: "", // set in createBackupDirectory
     numFilesDownloaded: 0, // set in logBackupStart (for reset) and processFileBackups (to increment)
+    completionStatusMessage: "", // set in processFileBackup and logAndDisplayError
     halted: false, // set whenever an error condition causes the schedule to stop being processed - needed to ensure that the series loop is not broken from the controller
 
     // Writes log stating that backup has begun for a schedule.
@@ -34,6 +35,7 @@ var base = {
 
             base.backupLogId = data.insertId;
             base.numFilesDownloaded = 0;
+            base.completionStatusMessage = "";
             base.logAndDisplayMessage (sprintf ("Starting schedule %s with log %s.", base.schedule.ScheduleId, base.backupLogId));
             callback ();
 
@@ -47,7 +49,7 @@ var base = {
         // if halted still allow the backup log entry to be closed out
         if (! base.backupLogId) return callback ();
 
-        database.query.backuplogs.updateAsFinished (base.backupLogId, function (data) {
+        database.query.backuplogs.updateAsFinished (base.backupLogId, base.completionStatusMessage, function (data) {
             if (data.error) { // intentionally not returning after error
                 base.logAndDisplayError (sprintf ("Could not close database backup log %s. Backup proceeding, but schedule %s will not be able to run again until this record is marked with a finish date.", base.backupLogId, base.schedule.ScheduleId));
             }
@@ -72,12 +74,12 @@ var base = {
             function (fileType, fileList, error) {
                 if (!utils.valueIsEmpty(error)) {
                     base.halted = true;
-                    base.logAndDisplayMessage (sprintf ("Error retrieving file list for schedule %s: %s", base.schedule.ScheduleId, error), true);
+                    base.logAndDisplayError (sprintf ("Error retrieving file list for schedule %s: %s", base.schedule.ScheduleId, error), true);
                     return callback ();
                 }
                 if (!fileList.length) {
                     base.halted = true;
-                    base.logAndDisplayMessage (sprintf ("No files to retrieve for schedule %s.", base.schedule.ScheduleId));
+                    base.logAndDisplayError (sprintf ("No files to retrieve for schedule %s.", base.schedule.ScheduleId));
                     return callback ();
                 }
 
@@ -142,7 +144,7 @@ var base = {
         // continue if completed processing all files
         if (utils.valueIsEmpty (base.backupFiles)) {
 
-            base.logAndDisplayMessage (sprintf (
+            base.completionStatusMessage = sprintf (
                 "Completing backup, %s %s file%s from %s%s to %s.",
                 (base.schedule.DeleteServerPickups) ? "moving" : "copying",
                 base.numFilesDownloaded,
@@ -150,7 +152,9 @@ var base = {
                 base.schedule.HostName,
                 base.schedule.PathServerPickup,
                 base.backupDirectory
-            ));
+            );
+
+            base.logAndDisplayMessage (base.completionStatusMessage);
 
             return callback ();
         }
@@ -224,6 +228,7 @@ var base = {
 
     // Sends an error message to the log and to screen.
     logAndDisplayError: function (message) {
+        base.completionStatusMessage = message; // allow the last error message to be recorded in the log table
         shell.writeLog (message);
         utils.outputError (message);
     }

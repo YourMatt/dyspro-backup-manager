@@ -12,6 +12,7 @@ CREATE TABLE Servers
 CREATE TABLE Schedules
 (            ScheduleId INT AUTO_INCREMENT PRIMARY KEY
 ,            ServerId INT NOT NULL
+,            Name VARCHAR(100)
 ,            PathLocalDropoff VARCHAR(500) NOT NULL
 ,            PathServerPickup VARCHAR(500) NOT NULL
 ,            ManageLocalBackups BIT NOT NULL DEFAULT 0
@@ -23,6 +24,7 @@ CREATE TABLE BackupLog
 ,            ScheduleId INT NOT NULL
 ,            DateStart DATETIME NOT NULL
 ,            DateFinish DATETIME
+,            StatusMessage VARCHAR(2000)
 ,            FOREIGN KEY (ScheduleId) REFERENCES Schedules(ScheduleId) ON DELETE CASCADE);
 
 CREATE TABLE BackupLogFiles

@@ -194,11 +194,14 @@ exports.query = {
 
         // Updates an existing log entry with completion date.
         // callback (object: {int:numUpdated, string:error})
-        updateAsFinished: function (backupLogId, callback) {
+        updateAsFinished: function (backupLogId, statusMessage, callback) {
 
             databaseAccessor.update ({
-                sql: "UPDATE BackupLog SET DateFinish = NOW() WHERE BackupLogId = ?",
-                values: backupLogId
+                sql: "UPDATE BackupLog SET DateFinish = NOW(), StatusMessage = ? WHERE BackupLogId = ?",
+                values: [
+                    statusMessage,
+                    backupLogId
+                ]
             }, callback);
 
         }
