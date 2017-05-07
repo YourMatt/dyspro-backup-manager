@@ -1,7 +1,7 @@
 #!/usr/bin/env nodejs
 
 // load configuration values
-require ("dotenv").config();
+require ("dotenv").config({path: "/etc/dysprobackup.conf"});
 
 // include libraries
 var async = require ("async")

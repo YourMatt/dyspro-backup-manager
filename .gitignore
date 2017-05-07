@@ -1,5 +1,5 @@
 # Environment variables
-.env
+dysprobackup.conf
 
 # Log files and test backup folders
 dysprobackup.log

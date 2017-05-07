@@ -43,8 +43,8 @@ This requires a MySQL database to manage server connections, backups schedules, 
 3.  Run `npm install -g`. The `dysprobackup` and `dysprobackupmanage` commands should now be accessible for command line
 or CronTab use. _If you plan on editing this code, you may want to use `npm link` so that changes to the source are 
 reflected by any global use of the shell commands._
-4.  Copy or move the `.env.sample` file to `.env`.
-5.  Adjust the values within `.env` to match your environment.
+4.  Move the `dysprobackup.conf.sample` file to `/etc/dysprobackup.conf`.
+5.  Adjust the values within `/etc/dysprobackup.conf` to match your environment.
 
 ## Usage
 This includes two utilities. The `dysprobackup` command will perform the backup operations, while the 
