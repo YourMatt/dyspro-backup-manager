@@ -29,6 +29,9 @@ exports.getCopyFileList = function (sshKey, hostName, userName, remotePath, call
                 GetSSHCommand (sshKey, hostName, userName),
                 utils.escapeShellParameterValue (remotePath)
             ),
+            {
+                maxBuffer: 1024 * 1000
+            },
             function (error, stdout, stderr) {
                 if (error) return callback (fileType, [], error.toString());
 
