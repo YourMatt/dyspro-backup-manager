@@ -1,5 +1,5 @@
 var childProcess = require ("child_process")
-,   utils = require ("./utils.js")
+,   utils = require (process.env.PATH_INSTALL + "/utils.js")
 ,   sprintf = require ("util").format;
 
 // Appends to local file.

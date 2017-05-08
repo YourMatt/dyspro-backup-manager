@@ -5,10 +5,10 @@ require ("dotenv").config({path: "/etc/dysprobackup.conf"});
 
 // include libraries
 var async = require ("async")
-,   shell = require ("./shell.js")
-,   utils = require ("./utils.js")
-,   backupmanager = require ("./backupmanager.js")
-,   schedulemanager = require ("./schedulemanager.js")
+,   shell = require (process.env.PATH_INSTALL + "/shell.js")
+,   utils = require (process.env.PATH_INSTALL + "/utils.js")
+,   backupmanager = require (process.env.PATH_INSTALL + "/backupmanager.js")
+,   schedulemanager = require (process.env.PATH_INSTALL + "/schedulemanager.js")
 ,   sprintf = require ("util").format;
 
 // mark process as started in log file

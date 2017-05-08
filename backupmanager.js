@@ -1,7 +1,7 @@
 // include libraries
-var shell = require ("./shell.js")
-,   utils = require ("./utils.js")
-,   database = require ("./database.js")
+var shell = require (process.env.PATH_INSTALL + "/shell.js")
+,   utils = require (process.env.PATH_INSTALL + "/utils.js")
+,   database = require (process.env.PATH_INSTALL + "/database.js")
 ,   fs = require ("fs")
 ,   sprintf = require ("util").format;
 
