@@ -9,9 +9,6 @@ DB_USER=backupsuser
 DB_PASSWORD=#o?2okc5h\r8/s@i.,
 DB_NAME=DysproBackupManager
 
-# install path
-PATH_INSTALL=/home/user/scripts/dyspro-backup-manager
-
 # log file
 LOG_FILE=/var/log/dysprobackup.log
 

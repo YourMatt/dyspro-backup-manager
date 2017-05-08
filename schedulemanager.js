@@ -3,9 +3,9 @@ var prompt = require ("prompt")
 ,   sprintf = require ("util").format
 ,   colors = require ("colors")
 ,   table = require ("cli-table")
-,   database = require (process.env.PATH_INSTALL + "/database.js")
-,   shell = require (process.env.PATH_INSTALL + "/shell.js")
-,   utils = require (process.env.PATH_INSTALL + "/utils.js");
+,   database = require ("./database.js")
+,   shell = require ("./shell.js")
+,   utils = require ("./utils.js");
 
 // Performs all actions related to schedule management
 var base = {

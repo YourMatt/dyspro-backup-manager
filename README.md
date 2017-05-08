@@ -41,8 +41,8 @@ This requires a MySQL database to manage server connections, backups schedules, 
 1.  From your home directory (or any other location), clone this repo.
 2.  Move into `./dyspro-backup-manager`.
 3.  Run `npm install -g`. The `dysprobackup` and `dysprobackupmanage` commands should now be accessible for command line
-or CronTab use. _If you plan on editing this code, you may want to use `npm link` so that changes to the source are 
-reflected by any global use of the shell commands._
+use. _If you plan on editing this code, you may want to use `npm link` so that changes to the source are reflected by 
+any global use of the shell commands._
 4.  Move the `dysprobackup.conf.sample` file to `/etc/dysprobackup.conf`.
 5.  Adjust the values within `/etc/dysprobackup.conf` to match your environment.
 
@@ -130,6 +130,12 @@ Runs all schedules. This is meant to be assigned to a cron job, but can also be 
 screen if running directly, and only sent to the log file if automated.
 
 Backup files will be placed in [local folder base]/[host name]/[log id]/
+
+#### Running Under Cron
+The registered command of `dysprobackup` does not properly run under cron. To schedule backups, should instead use node
+to run the script.
+
+`0 0 * * * nodejs /home/user/scripts/dyspro-backup-manager/backup.js`
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

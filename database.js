@@ -1,5 +1,5 @@
 var mysql = require ("mysql")
-,   utils = require (process.env.PATH_INSTALL + "/utils");
+,   utils = require ("./utils");
 
 // Provides all database queries.
 exports.query = {

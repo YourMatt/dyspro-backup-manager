@@ -6,9 +6,9 @@ require ("dotenv").config({path: "/etc/dysprobackup.conf"});
 // include libraries
 var program = require ("commander")
 ,   async = require ("async")
-,   servermanager = require (process.env.PATH_INSTALL + "/servermanager.js")
-,   schedulemanager = require (process.env.PATH_INSTALL + "/schedulemanager.js")
-,   utils = require (process.env.PATH_INSTALL + "/utils.js")
+,   servermanager = require ("./servermanager.js")
+,   schedulemanager = require ("./schedulemanager.js")
+,   utils = require ("./utils.js")
 ,   sprintf = require ("util").format;
 
 // handle server management requests

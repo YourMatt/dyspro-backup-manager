@@ -3,9 +3,9 @@ var prompt = require ("prompt")
 ,   sprintf = require ("util").format
 ,   colors = require ("colors")
 ,   table = require ("cli-table")
-,   database = require (process.env.PATH_INSTALL + "/database.js")
-,   shell = require (process.env.PATH_INSTALL + "/shell.js")
-,   utils = require (process.env.PATH_INSTALL + "/utils.js");
+,   database = require ("./database.js")
+,   shell = require ("./shell.js")
+,   utils = require ("./utils.js");
 
 // Performs all actions related to server management
 var base = {
@@ -32,7 +32,7 @@ var base = {
         else {
             database.query.servers.get (function (data) {
                 if (data.error) return utils.outputError (data);
-                if (!data.numResults) return utils.output ("No servers are currently registered.");
+                if (!data.numResults) return utils.outputError ("No servers are currently registered.");
 
                 base.servers = data.results;
                 callback ();
