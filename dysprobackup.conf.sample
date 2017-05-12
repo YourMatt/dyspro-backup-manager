@@ -12,6 +12,9 @@ DB_NAME=DysproBackupManager
 # log file
 LOG_FILE=/var/log/dysprobackup.log
 
+# retention schedule - only used if a schedule is marked as managed and no retention schedule is defined on the record
+DEFAULT_RETENTION=y1,m2,w2,d3
+
 # colors - use colors defined at: https://github.com/marak/colors.js
 COLOR_ERROR=red
 COLOR_SUCCESS=green

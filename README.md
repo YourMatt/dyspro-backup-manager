@@ -46,6 +46,22 @@ any global use of the shell commands._
 4.  Move the `dysprobackup.conf.sample` file to `/etc/dysprobackup.conf`.
 5.  Adjust the values within `/etc/dysprobackup.conf` to match your environment.
 
+### Configuration File
+Set the following options in `/etc/dysprobackup.conf`:
+
+| Option | Description |
+|---|---|
+| DB_HOST | Database server host by dns or direct IP |
+| DB_USER | User name for connecting to the database |
+| DB_PASSWORD | User password to database |
+| DB_NAME | Name of database |
+| LOG_FILE | Absolute path to the log file |
+| DEFAULT_RETENTION | For managed backups, that don't have a retention schedule defined, this default will be used - For details, see the [Retention Policy](#retention-policy) section |
+| COLOR_ERROR | Console text color when any error is encountered |
+| COLOR_SUCCESS | Conole text color when success status is displayed |
+| COLOR_TABLE_BORDER | Console color for table borders |
+| COLOR_TABLE_HEADING | Console text color for table headings |
+
 ## Usage
 This includes two utilities. The `dysprobackup` command will perform the backup operations, while the 
 `dysprobackupmanage` command will allow management of the backup schedules and logs.
@@ -100,7 +116,7 @@ Manages the backup operations to be executed whenever the `dysprobackup` command
 | -r --remotepath | Remote absolute path to directory or file to pick up when running the backup schedule - If a directory, only real files in the directory will be picked up, non-recursive |
 | -l --localpath | Local absolute path to the directory to place the backup file(s) after downloading |
 | -d --deleteremote | If provided for add or update operations, will cause the schedule to remove any remote files after downloading |
-| -m --managelocal | If provided for add or update operations, will cause the downloaded files to be cleaned out in accordance of the retention policy |
+| -m --managelocal | If provided for add or update operations, will cause the downloaded files to be cleaned out in accordance of the retention policy - This will use the default from dysprobackup.conf if retention schedule is not provided - See the [Retention Schedule](#retention-schedule) section for format |
 | -i --id | The schedule ID to reference in update, delete, test, and list operations |
 
 `dysprobackupmanage schedules -h`  
@@ -114,12 +130,12 @@ displayed.
 Test that remote and local paths are accessible for all backup schedules. If the host name is provided, only operations
 related to this host will be tested. If the schedule ID is provided, only this specific backup operation will be tested.
 
-`dysprobackupmanage schedules add -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m]`  
+`dysprobackupmanage schedules add -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m [y0,m0,w0,d0]]`  
 Register a new backup operation. This will also validate that paths are accessible. If using the delete remote files
 option (-d) or the manage local files option (-m), you will be prompted to confirm, as these are potentially destructive
 options.
 
-`dysprobackupmanage schedules update -i schedule_id -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m]`  
+`dysprobackupmanage schedules update -i schedule_id -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m [y0,m0,w0,d0]]`  
 Update an existing backup operation. If not known, first use the list action to find the schedule ID.  
 
 `dysprobackupmanage schedules delete -i schedule_id`  
@@ -136,6 +152,18 @@ The registered command of `dysprobackup` does not properly run under cron. To sc
 to run the script.
 
 `0 0 * * * nodejs /home/user/scripts/dyspro-backup-manager/backup.js`
+
+## Retention Policy
+Schedules can be set to manage the backups, ensuring that disk space isn't wasted on backups that no longer have any
+value. Each time the `dysprobackup` command runs, schedules marked with `--managelocal` will be subject to cleanup.
+
+### Format
+Both the default in `dysprobackup.conf` and any schedules should follow the following format:
+
+`y0,m0,w0,d0`
+
+Each numeral represents the number of backups to retain for the most recent number of years, months, weeks, and days,
+respectively.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

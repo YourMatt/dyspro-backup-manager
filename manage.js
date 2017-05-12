@@ -84,7 +84,7 @@ program
 .option ("-r, --remotepath <remotepath>", "directory where to pick up files from the server - required for: add, update")
 .option ("-l, --localpath <localpath>", "directory where to drop off files on the local system - required for: add, update")
 .option ("-d, --deleteremote", "set option to delete server files after downloading - optional for: add, update")
-.option ("-m, --managelocal", "set option to automatically remove outdated local backups - optional for: add, update")
+.option ("-m, --managelocal [schedule]", "set option to automatically remove outdated local backups - optional for: add, update")
 .option ("-i, --id <scheduleid>", "existing schedule id - required for: update, delete - optional for test")
 .action (function (action, options) {
     if (utils.valueIsEmpty (action)) action = "list"; // set default when no action provided

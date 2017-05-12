@@ -130,7 +130,7 @@ exports.query = {
         },
 
         // Inserts new schedule.
-        insert: function (serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, deleteServerPickups, callback) {
+        insert: function (serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, manageLocalBackupsSchedule, deleteServerPickups, callback) {
 
             databaseAccessor.insert ({
                 sql: "INSERT INTO Schedules SET ?",
@@ -139,6 +139,7 @@ exports.query = {
                     PathLocalDropoff: utils.normalizePath (pathLocalDropoff),
                     PathServerPickup: utils.normalizePath (pathServerPickup),
                     ManageLocalBackups: manageLocalBackups,
+                    ManageLocalBackupsSchedule: manageLocalBackupsSchedule,
                     DeleteServerPickups: deleteServerPickups
                 }
             }, callback);
@@ -146,7 +147,7 @@ exports.query = {
         },
 
         // Updates an existing schedule.
-        update: function (scheduleId, serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, deleteServerPickups, callback) {
+        update: function (scheduleId, serverId, pathLocalDropoff, pathServerPickup, manageLocalBackups, manageLocalBackupsSchedule, deleteServerPickups, callback) {
 
             databaseAccessor.update ({
                 sql: "UPDATE Schedules SET ? WHERE ScheduleId = ?",
@@ -155,6 +156,7 @@ exports.query = {
                     PathLocalDropoff: utils.normalizePath (pathLocalDropoff),
                     PathServerPickup: utils.normalizePath (pathServerPickup),
                     ManageLocalBackups: manageLocalBackups,
+                    ManageLocalBackupsSchedule: manageLocalBackupsSchedule,
                     DeleteServerPickups: deleteServerPickups
                     },
                     scheduleId

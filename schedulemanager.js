@@ -75,7 +75,7 @@ var base = {
                 utils.normalizePath (base.schedules[i].PathServerPickup),
                 utils.normalizePath (base.schedules[i].PathLocalDropoff),
                 (base.schedules[i].DeleteServerPickups) ? "YES" : "NO",
-                (base.schedules[i].ManageLocalBackups) ? "YES" : "NO"
+                (base.schedules[i].ManageLocalBackups) ? sprintf ("YES (%s)", (base.schedules[i].ManageLocalBackupsSchedule) ? base.schedules[i].ManageLocalBackupsSchedule : "Default Retention") : "NO"
             ]);
         }
 
@@ -172,6 +172,7 @@ var base = {
                 PathLocalDropoff: utils.normalizePath (base.options.localpath),
                 PathServerPickup: utils.normalizePath (base.options.remotepath),
                 ManageLocalBackups: ! utils.valueIsEmpty (base.options.managelocal),
+                ManageLocalBackupsSchedule: (! utils.valueIsEmpty (base.options.managelocal) && base.options.managelocal != 1) ? base.options.managelocal : "",
                 DeleteServerPickups: ! utils.valueIsEmpty (base.options.deleteremote),
                 ServerId: hostData.results.ServerId,
                 PathSSHKeyFile: utils.normalizePath (hostData.results.PathSSHKeyFile),
@@ -235,8 +236,7 @@ var base = {
                 confirm: {
                     pattern: /^(yes|no|y|n)$/gi,
                     description: "You have opted to manage local files. Any backup files stored locally are subject " +
-                    "to deletion over time in accordance to your retention schedule defined in the .env file. Are " +
-                    "you sure?",
+                    "to deletion over time in accordance to your retention schedule. Are you sure?",
                     message: "Type yes/no",
                     required: true,
                     default: "no"
@@ -267,6 +267,7 @@ var base = {
             schedule.PathLocalDropoff,
             schedule.PathServerPickup,
             schedule.ManageLocalBackups,
+            schedule.ManageLocalBackupsSchedule,
             schedule.DeleteServerPickups,
             function (data) {
                 if (data.error) return utils.outputError (data.error);
@@ -293,6 +294,7 @@ var base = {
             schedule.PathLocalDropoff,
             schedule.PathServerPickup,
             schedule.ManageLocalBackups,
+            schedule.ManageLocalBackupsSchedule,
             schedule.DeleteServerPickups,
             function (data) {
                 if (data.error) return utils.outputError (data.error);

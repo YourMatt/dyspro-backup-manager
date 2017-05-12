@@ -16,6 +16,7 @@ CREATE TABLE Schedules
 ,            PathLocalDropoff VARCHAR(500) NOT NULL
 ,            PathServerPickup VARCHAR(500) NOT NULL
 ,            ManageLocalBackups BIT NOT NULL DEFAULT 0
+,            ManageLocalBackupsRetention VARCHAR(50)
 ,            DeleteServerPickups BIT NOT NULL DEFAULT 0
 ,            FOREIGN KEY (ServerId) REFERENCES Servers(ServerId) ON DELETE CASCADE);
 
