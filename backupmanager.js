@@ -88,7 +88,7 @@ var base = {
             if (! data.numResults) return callback ();
 
             // if no finish date, don't allow to continue
-            if (utils.valueIsEmpty (data.results.DateFinish)) {
+            if (utils.valueIsEmpty (data.results.DateFinished)) {
                 base.logAndDisplayError (sprintf ("Could not run schedule %s because it is already running. If this is in error, delete log entry %s.", base.schedule.ScheduleId, data.results.BackupLogId));
                 base.halted = true;
             }

@@ -212,11 +212,22 @@ exports.query = {
         updateAsFinished: function (backupLogId, statusMessage, callback) {
 
             databaseAccessor.update ({
-                sql: "UPDATE BackupLog SET DateFinish = NOW(), StatusMessage = ? WHERE BackupLogId = ?",
+                sql: "UPDATE BackupLog SET DateFinished = NOW(), StatusMessage = ? WHERE BackupLogId = ?",
                 values: [
                     statusMessage,
                     backupLogId
                 ]
+            }, callback);
+
+        },
+
+        // Updates an existing log entry with a deletion date.
+        // callback (object: {int:numUpdated, string:error})
+        updateAsDeleted: function (backupLogId, callback) {
+
+            databaseAccessor.update ({
+                sql: "UPDATE BackupLog SET DateDeleted = NOW() WHERE BackupLogId = ?",
+                values: backupLogId
             }, callback);
 
         }

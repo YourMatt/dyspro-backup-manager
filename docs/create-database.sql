@@ -22,8 +22,9 @@ CREATE TABLE Schedules
 CREATE TABLE BackupLog
 (            BackupLogId INT AUTO_INCREMENT PRIMARY KEY
 ,            ScheduleId INT NOT NULL
-,            DateStart DATETIME NOT NULL
-,            DateFinish DATETIME
+,            DateStarted DATETIME NOT NULL
+,            DateFinished DATETIME
+,            DateDeleted DATETIME
 ,            StatusMessage VARCHAR(2000)
 ,            FOREIGN KEY (ScheduleId) REFERENCES Schedules(ScheduleId) ON DELETE CASCADE);
 
@@ -33,7 +34,6 @@ CREATE TABLE BackupLogFiles
 ,            FileName VARCHAR(250) NOT NULL
 ,            FileSize BIGINT UNSIGNED NOT NULL
 ,            DateCreated DATETIME NOT NULL
-,            DateDeleted DATETIME
 ,            FOREIGN KEY (BackupLogId) REFERENCES BackupLog(BackupLogId) ON DELETE CASCADE);
 
 SHOW TABLES;
