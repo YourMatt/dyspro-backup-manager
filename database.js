@@ -181,6 +181,26 @@ exports.query = {
     // Query against the backup log table
     backuplogs: {
 
+        // Pulls all backup logs that have not yet been deleted.
+        // callback (object: {int:numResults, array:results, string:error})
+        getActiveArchivesByScheduleId: function (scheduleId, callback) {
+
+            databaseAccessor.selectMultiple({
+                sql: "SELECT      bl.BackupLogId " +
+                     ",           bl.DateStarted " +
+                     ",           TIMESTAMPDIFF(DAY, bl.DateStarted, NOW()) AS AgeDays " +
+                     ",           COUNT(blf.BackupLogFileId) AS NumFiles " +
+                     "FROM        BackupLog bl " +
+                     "INNER JOIN  BackupLogFiles blf ON blf.BackupLogId = bl.BackupLogId " +
+                     "WHERE       bl.ScheduleId = ? " +
+                     "AND         bl.DateDeleted IS NULL " +
+                     "GROUP BY    bl.BackupLogId " +
+                     "ORDER BY    bl.DateStarted DESC ",
+                values: scheduleId
+            }, callback);
+
+        },
+
         // Pulls the last log entry for a given schedule.
         // callback (object: {int:numResults, object:results, string:error})
         getLastByScheduleId: function (scheduleId, callback) {
@@ -201,7 +221,7 @@ exports.query = {
         insert: function (scheduleId, callback) {
 
             databaseAccessor.insert ({
-                sql: "INSERT INTO BackupLog SET DateStart = NOW(), ?",
+                sql: "INSERT INTO BackupLog SET DateStarted = NOW(), ?",
                 values: {
                     ScheduleId: scheduleId
                 }
