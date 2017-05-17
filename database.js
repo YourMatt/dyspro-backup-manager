@@ -194,6 +194,7 @@ exports.query = {
                      "INNER JOIN  BackupLogFiles blf ON blf.BackupLogId = bl.BackupLogId " +
                      "WHERE       bl.ScheduleId = ? " +
                      "AND         bl.DateDeleted IS NULL " +
+                     "AND         bl.DateFinished IS NOT NULL " +
                      "GROUP BY    bl.BackupLogId " +
                      "ORDER BY    bl.DateStarted DESC ",
                 values: scheduleId

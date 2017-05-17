@@ -64,7 +64,7 @@ Set the following options in `/etc/dysprobackup.conf`:
 
 ## Usage
 This includes two utilities. The `dysprobackup` command will perform the backup operations, while the 
-`dysprobackupmanage` command will allow management of the backup schedules and logs.
+`dysprobackupmanage` command will allow management of the backup schedules.
 
 ### dysprobackupmanage
 Manage all backup operations. None of this is necessary for the `dysprobackup` command to work as long as all data are 
@@ -136,7 +136,7 @@ option (-d) or the manage local files option (-m), you will be prompted to confi
 options.
 
 `dysprobackupmanage schedules update -i schedule_id -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m [y0,m0,w0,d0]]`  
-Update an existing backup operation. If not known, first use the list action to find the schedule ID.  
+Update an existing backup operation. If not known, first use the `list` action to find the schedule ID.  
 
 `dysprobackupmanage schedules delete -i schedule_id`  
 Unregister a backup operation.
@@ -155,15 +155,22 @@ to run the script.
 
 ## Retention Policy
 Schedules can be set to manage the backups, ensuring that disk space isn't wasted on backups that no longer have any
-value. Each time the `dysprobackup` command runs, schedules marked with `--managelocal` will be subject to cleanup.
+value. Each time the `dysprobackup` command or `backups.js` script runs, schedules marked with `--managelocal` will be
+subject for removal.
 
 ### Format
-Both the default in `dysprobackup.conf` and any schedules should follow the following format:
+Both the default in `dysprobackup.conf` and any schedules follow the following format:
 
 `y0,m0,w0,d0`
 
 Each numeral represents the number of backups to retain for the most recent number of years, months, weeks, and days,
 respectively.
+
+_**Notice:** The sum of the numerals does not necessarily equate to the number of backups that will be retained. There could
+be more to accommodate the next upcoming backup at the weekly, monthly, or yearly backup. For example, if the retention
+schedule is set to `y0,m0,w1,d2`, there could be a max of 4 backups retained. This would be the current and previous
+days, the weekly backup, plus the oldest daily backup before the end of the week, which will be later used to replace
+the weekly backup. Be sure to take this into account when calculating the amount of required local storage space._
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

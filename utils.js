@@ -1,4 +1,5 @@
-var colors = require ("colors/safe");
+var colors = require ("colors/safe")
+,   fs = require ("fs");
 
 // set color themes
 colors.setTheme ({
@@ -32,6 +33,38 @@ exports.normalizePath = function (path) {
 
     // trim and remove any trailing slash
     return path.trim().replace(/\/$/, "");
+
+};
+
+// Deletes a folder and all contents.
+exports.deleteDirectoryRecursive = function (path) {
+
+    // disallow removal of root
+    if (! path || path === "/") return;
+
+    // perform delete if directory exists
+    if (fs.existsSync (path)) {
+
+        // find all files within the directory
+        fs.readdirSync (path).forEach (function (file, index) {
+            var curPath = path + "/" + file;
+
+            // remove subdirectories
+            if (fs.lstatSync(curPath).isDirectory ()) {
+                exports.deleteDirectoryRecursive (curPath);
+            }
+
+            // remove file
+            else {
+                fs.unlinkSync (curPath);
+            }
+
+        });
+
+        // remove directory
+        fs.rmdirSync (path);
+
+    }
 
 };
 

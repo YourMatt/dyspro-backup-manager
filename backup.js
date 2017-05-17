@@ -37,7 +37,9 @@ function ProcessNextSchedule (schedules) {
         backupmanager.getBackupFileList,
         backupmanager.createBackupDirectory,
         backupmanager.processFileBackup,
-        backupmanager.logBackupComplete
+        backupmanager.logBackupComplete,
+        backupmanager.processBackupManagement,
+        backupmanager.markManagedBackupDeletionsAsDeleted
         ],
         function () {
             ProcessNextSchedule (schedules);
