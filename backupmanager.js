@@ -317,32 +317,40 @@ var base = {
                 // keep first x number of days
                 if (numKeptDays < retainDays &&
                     backupsToKeepAges.indexOf (data.results[i].AgeDays) < 0) {
-                    backupsToKeep.push (data.results[i].BackupLogId);
-                    backupsToKeepAges.push (data.results[i].AgeDays);
+                    if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                        backupsToKeep.push (data.results[i].BackupLogId);
+                        backupsToKeepAges.push (data.results[i].AgeDays);
+                    }
                     numKeptDays++;
                 }
 
                 // keep first x number of weeks
                 if (numKeptWeeks < retainWeeks &&
                     numKeptWeeks < Math.floor (data.results[i].AgeDays / 7)) {
-                    backupsToKeep.push (data.results[i].BackupLogId);
-                    backupsToKeepAges.push (data.results[i].AgeDays);
+                    if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                        backupsToKeep.push (data.results[i].BackupLogId);
+                        backupsToKeepAges.push (data.results[i].AgeDays);
+                    }
                     numKeptWeeks++;
                 }
 
                 // keep first x number of months
                 if (numKeptMonths < retainMonths &&
                     numKeptMonths < Math.floor (data.results[i].AgeDays / 30)) {
-                    backupsToKeep.push (data.results[i].BackupLogId);
-                    backupsToKeepAges.push (data.results[i].AgeDays);
+                    if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                        backupsToKeep.push (data.results[i].BackupLogId);
+                        backupsToKeepAges.push (data.results[i].AgeDays);
+                    }
                     numKeptMonths++;
                 }
 
                 // keep first x number of years
                 if (numKeptYears < retainYears &&
                     numKeptYears < Math.floor (data.results[i].AgeDays / 365)) {
-                    backupsToKeep.push (data.results[i].BackupLogId);
-                    backupsToKeepAges.push (data.results[i].AgeDays);
+                    if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                        backupsToKeep.push (data.results[i].BackupLogId);
+                        backupsToKeepAges.push (data.results[i].AgeDays);
+                    }
                     numKeptYears++;
                 }
 
@@ -354,8 +362,10 @@ var base = {
                     if (retainWeeks &&
                         ! foundUpcomingWeeklyBackup &&
                         data.results[i].AgeDays >= 7) {
-                        backupsToKeep.push (data.results[previousIndex].BackupLogId);
-                        backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[previousIndex].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[previousIndex].BackupLogId);
+                            backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        }
                         foundUpcomingWeeklyBackup = true;
                     }
 
@@ -363,8 +373,10 @@ var base = {
                     if (retainMonths &&
                         ! foundUpcomingMonthlyBackup &&
                         data.results[i].AgeDays >= 30) {
-                        backupsToKeep.push (data.results[previousIndex].BackupLogId);
-                        backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[previousIndex].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[previousIndex].BackupLogId);
+                            backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        }
                         foundUpcomingMonthlyBackup = true;
                     }
 
@@ -372,8 +384,10 @@ var base = {
                     if (retainYears &&
                         ! foundUpcomingYearlyBackup &&
                         data.results[i].AgeDays >= 365) {
-                        backupsToKeep.push (data.results[previousIndex].BackupLogId);
-                        backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[previousIndex].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[previousIndex].BackupLogId);
+                            backupsToKeepAges.push (data.results[previousIndex].AgeDays);
+                        }
                         foundUpcomingYearlyBackup = true;
                     }
 
@@ -384,22 +398,28 @@ var base = {
 
                     if (retainWeeks &&
                     ! foundUpcomingWeeklyBackup) {
-                        backupsToKeep.push (data.results[i].BackupLogId);
-                        backupsToKeepAges.push (data.results[i].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[i].BackupLogId);
+                            backupsToKeepAges.push (data.results[i].AgeDays);
+                        }
                         foundUpcomingWeeklyBackup = true;
                     }
 
                     if (retainMonths &&
                         ! foundUpcomingMonthlyBackup) {
-                        backupsToKeep.push (data.results[i].BackupLogId);
-                        backupsToKeepAges.push (data.results[i].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[i].BackupLogId);
+                            backupsToKeepAges.push (data.results[i].AgeDays);
+                        }
                         foundUpcomingMonthlyBackup = true;
                     }
 
                     if (retainYears &&
                         ! foundUpcomingYearlyBackup) {
-                        backupsToKeep.push (data.results[i].BackupLogId);
-                        backupsToKeepAges.push (data.results[i].AgeDays);
+                        if (backupsToKeep.indexOf (data.results[i].BackupLogId) < 0) {
+                            backupsToKeep.push (data.results[i].BackupLogId);
+                            backupsToKeepAges.push (data.results[i].AgeDays);
+                        }
                         foundUpcomingYearlyBackup = true;
                     }
 
@@ -414,12 +434,21 @@ var base = {
                     backupsToDelete.push (data.results[i].BackupLogId);
             }
 
-            // log expected activity
-            base.logAndDisplayMessage (sprintf ("Keeping backup schedules: %s with respective daily ages of: %s.",
-                backupsToKeep.join (", "),
-                backupsToKeepAges.join (", ")));
-            base.logAndDisplayMessage (sprintf ("Removing backup schedules: %s.",
-                backupsToDelete.join (", ")));
+            // log expected retention activity
+            if (backupsToKeep.length) {
+                var logScheduleList = [];
+                for (var i = 0; i < backupsToKeep.length; i++) {
+                    logScheduleList.push (sprintf ("%s (%s day%s)", backupsToKeep[i], backupsToKeepAges[i], (backupsToKeepAges[i] === 1) ? "" : "s"));
+                }
+                base.logAndDisplayMessage (sprintf ("Keeping backup schedules: %s", logScheduleList.join (", ")));
+            }
+            else base.logAndDisplayMessage ("No backups are marked to keep."); // this should never happen
+
+            // log expected deletion activity
+            if (backupsToDelete.length) {
+                base.logAndDisplayMessage (sprintf ("Removing backup schedules: %s", backupsToDelete.join (", ")));
+            }
+            else base.logAndDisplayMessage ("No backups are marked for deletion.");
 
             // loop through delete candidates to perform deletion
             for (var i = 0; i < backupsToDelete.length; i++) {
