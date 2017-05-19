@@ -1,6 +1,6 @@
 {
   "name": "dyspro-backup-manager",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "A command line utility for creating offsite backups to a local network from a server environment.",
   "main": "backup.js",
   "repository": {

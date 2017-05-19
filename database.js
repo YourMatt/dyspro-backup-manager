@@ -284,9 +284,12 @@ var databaseAccessor = {
 
     db: null,
 
+    // Creates connection to the database. Returns boolean, and only makes a call to the callback if an error has
+    // occurred.
+    // callback (object: {int:numResults, int:insertId, int:numUpdated, int:numDeleted, object:results, string:error}
     init: function (callback) {
 
-        // create the db connection
+        // create the database connection
         this.db = mysql.createConnection ({
             host: process.env.DB_HOST,
             user: process.env.DB_USER,
@@ -316,17 +319,22 @@ var databaseAccessor = {
 
     },
 
+    // Closes the connection to the database.
     close: function () {
 
-        // close the database connection
         this.db.end ();
 
     },
 
+    // Makes callback for all error states.
+    // callback (object: {int:numResults, int:insertId, int:numUpdated, int:numDeleted, object:results, string:error}
     handleError: function (query, error, callback) {
 
         callback ({
             numResults: 0,
+            insertId: 0,
+            numUpdated: 0,
+            numDeleted: 0,
             results: null,
             error: error.toString()
         });

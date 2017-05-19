@@ -1,7 +1,5 @@
 # dyspro-backup-manager
 
-_NOTICE: THIS IS CURRENTLY IN DEVELOPMENT. DO NOT USE._ 
-
 ## Synopsis
 This is a command line utility for creating offsite backups which pull from external servers and place on a local
 network.

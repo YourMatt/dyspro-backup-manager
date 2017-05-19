@@ -227,6 +227,10 @@ exports.validateLocalPath = function (localPath, callback) {
 // Formats SSH command.
 function GetSSHCommand (sshKey, hostName, userName) {
 
-    return "ssh -i " + utils.escapeShellParameterValue (sshKey) + " " + userName + "@" + hostName;
+    return sprintf ("ssh -i %s %s@%s",
+        utils.escapeShellParameterValue (sshKey),
+        userName,
+        hostName
+    );
 
 }

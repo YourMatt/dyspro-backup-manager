@@ -14,6 +14,7 @@ var base = {
     servers: [], // list of servers to perform an operation against
 
     // Loads all registered servers.
+    // callback (no params)
     loadServers: function (callback)
     {
 
@@ -42,7 +43,8 @@ var base = {
     },
 
     // Displays all loaded servers as a table.
-    list: function () {
+    // callback (no params)
+    list: function (callback) {
 
         // build the results table
         var resultsTable = new table ({
@@ -66,9 +68,12 @@ var base = {
         // display the table
         utils.output (resultsTable.toString());
 
+        callback ();
+
     },
 
     // Validates that required parameters for add operations exist.
+    // callback (no params)
     validateInputForAdd: function (callback)
     {
 
@@ -90,6 +95,7 @@ var base = {
     },
 
     // Validates that required parameters for update operations exist.
+    // callback (no params)
     validateInputForUpdate: function (callback)
     {
 
@@ -104,6 +110,7 @@ var base = {
     },
 
     // Validates that required parameters for delete operations exist.
+    // callback (no params)
     validateInputForDelete: function (callback) {
 
         if (utils.valueIsEmpty (base.options.hostname))
@@ -114,6 +121,7 @@ var base = {
     },
 
     // Validates that the input connection credentials are valid.
+    // callback (no params)
     validateCredentials: function (callback) {
 
         // validate the SSH key
@@ -132,6 +140,7 @@ var base = {
     },
 
     // Registers a new server.
+    // callback (no params)
     add: function (callback) {
 
         database.query.servers.insert (
@@ -151,10 +160,11 @@ var base = {
     },
 
     // Updates an existing server.
+    // callback (no params)
     update: function (callback) {
 
         // validate the currently loaded server
-        if (utils.valueIsEmpty (base.servers) || base.servers.length != 1) return utils.outputError ("Unexpected value for delete operation list.");
+        if (utils.valueIsEmpty (base.servers) || base.servers.length !== 1) return utils.outputError ("Unexpected value for delete operation list.");
         var serverId = base.servers[0].ServerId;
 
         database.query.servers.update (
@@ -175,10 +185,11 @@ var base = {
     },
 
     // Deletes the currently loaded server.
+    // callback (no params)
     delete: function (callback) {
 
         // validate the currently loaded server
-        if (utils.valueIsEmpty (base.servers) || base.servers.length != 1) return utils.outputError ("Unexpected value for delete operation list.");
+        if (utils.valueIsEmpty (base.servers) || base.servers.length !== 1) return utils.outputError ("Unexpected value for delete operation list.");
         var serverId = base.servers[0].ServerId;
 
         // check the number of schedules affected
@@ -201,7 +212,7 @@ var base = {
                             description: sprintf (
                                 "This server is used by %s schedule%s, which will each be deleted as well. Are you sure you want to continue?",
                                 deletedSchedules,
-                                (deletedSchedules == 1) ? "" : "s"
+                                (deletedSchedules === 1) ? "" : "s"
                             ),
                             message: "Type yes/no",
                             required: true,
@@ -211,7 +222,7 @@ var base = {
 
                 }, function (error, result) {
                     result = result.confirm.toLowerCase ();
-                    if (result != "y" && result != "yes") return;
+                    if (result !== "y" && result !== "yes") return;
 
                     // delete the schedule
                     database.query.servers.delete (serverId, function (data) {
@@ -223,7 +234,7 @@ var base = {
                             "Deleted %s with %s associated schedule%s from server list.",
                             base.options.hostname.underline,
                             deletedSchedules,
-                            (deletedSchedules == 1) ? "" : "s"
+                            (deletedSchedules === 1) ? "" : "s"
                         ));
 
                     });
@@ -256,7 +267,9 @@ var base = {
     },
 
     // Tests servers to validate connections.
-    test: function () {
+    // callback (no params)
+    test: function (callback) {
+        if (! base.servers.length) return callback ();
 
         var currentServer = base.servers.pop ();
         if (! utils.valueIsEmpty (currentServer)) {
@@ -272,7 +285,7 @@ var base = {
                     else utils.outputSuccess ("SUCCESS");
 
                     // test the next server
-                    base.test ();
+                    base.test (callback);
 
                 }
             );

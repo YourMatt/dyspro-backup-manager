@@ -71,7 +71,7 @@ exports.deleteDirectoryRecursive = function (path) {
 // Writes output to console.
 exports.output = function (message) {
 
-    if (typeof message == "string") message = message.trim ();
+    if (typeof message === "string") message = message.trim ();
     console.log (message);
 
 };

@@ -14,6 +14,7 @@ var base = {
     schedules: [], // list of schedules to perform an operation against
 
     // Loads schedules related to a given option.
+    // callback (no params)
     loadSchedules: function (callback)
     {
 
@@ -56,6 +57,7 @@ var base = {
     },
 
     // Displays all loaded schedules as a table.
+    // callback (no params)
     list: function (callback) {
 
         // build the results table
@@ -87,6 +89,7 @@ var base = {
     },
 
     // Validates that required parameters for add operations exists.
+    // callback (no params)
     validateInputForAdd: function (callback)
     {
 
@@ -101,6 +104,7 @@ var base = {
     },
 
     // Validates that required parameters for update operations exists.
+    // callback (no params)
     validateInputForUpdate: function (callback)
     {
 
@@ -116,6 +120,7 @@ var base = {
     },
 
     // Validates that required parameters for delete operations exists.
+    // callback (no params)
     validateInputForDelete: function (callback)
     {
 
@@ -128,9 +133,10 @@ var base = {
     },
 
     // Validates that the operation paths exist.
+    // callback (no params)
     validatePaths: function (callback) {
 
-        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for validate paths operation list.");
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length !== 1) return utils.outputError ("Unexpected value for validate paths operation list.");
         var schedule = base.schedules[0];
 
         // validate the local path
@@ -158,6 +164,7 @@ var base = {
     },
 
     // Adds the input fields as a mock schedule so that it can be tested.
+    // callback (no params)
     loadInputToTest: function (callback)
     {
 
@@ -172,7 +179,7 @@ var base = {
                 PathLocalDropoff: utils.normalizePath (base.options.localpath),
                 PathServerPickup: utils.normalizePath (base.options.remotepath),
                 ManageLocalBackups: ! utils.valueIsEmpty (base.options.managelocal),
-                ManageLocalBackupsSchedule: (! utils.valueIsEmpty (base.options.managelocal) && base.options.managelocal != 1) ? base.options.managelocal : "",
+                ManageLocalBackupsSchedule: (! utils.valueIsEmpty (base.options.managelocal) && base.options.managelocal !== 1) ? base.options.managelocal : "",
                 DeleteServerPickups: ! utils.valueIsEmpty (base.options.deleteremote),
                 ServerId: hostData.results.ServerId,
                 PathSSHKeyFile: utils.normalizePath (hostData.results.PathSSHKeyFile),
@@ -186,6 +193,7 @@ var base = {
     },
 
     // Prompts the user to confirm that they want to use the delete remote files option.
+    // callback (no params)
     checkScheduleConfirmDeleteRemote: function (callback)
     {
 
@@ -222,6 +230,7 @@ var base = {
     },
 
     // Prompts the user to confirm that they wan to use the manage local files option.
+    // callback (no params)
     checkScheduleConfirmManageLocal: function (callback) {
 
         prompt.start ();
@@ -257,6 +266,7 @@ var base = {
     },
 
     // Registers a new schedule.
+    // callback (no params)
     add: function (callback) {
 
         if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for add operation list.");
@@ -282,10 +292,11 @@ var base = {
     },
 
     // Updates an existing schedule.
+    // callback (no params)
     update: function (callback) {
 
         // validate the currently loaded schedule
-        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for update operation list.");
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length !== 1) return utils.outputError ("Unexpected value for update operation list.");
         var schedule = base.schedules[0];
 
         database.query.schedules.update (
@@ -309,10 +320,11 @@ var base = {
     },
 
     // Deletes the currently loaded schedule.
+    // callback (no params)
     delete: function (callback) {
 
         // validate the currently loaded server
-        if (utils.valueIsEmpty (base.schedules) || base.schedules.length != 1) return utils.outputError ("Unexpected value for delete operation list.");
+        if (utils.valueIsEmpty (base.schedules) || base.schedules.length !== 1) return utils.outputError ("Unexpected value for delete operation list.");
         var scheduleId = base.schedules[0].ScheduleId;
 
         // delete the schedule
@@ -332,6 +344,7 @@ var base = {
     },
 
     // Tests server schedules to validate that the remote and local directories are accessible.
+    // callback (no params)
     test: function (callback) {
 
         var currentSchedule = base.schedules.pop ();
