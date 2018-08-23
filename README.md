@@ -1,19 +1,12 @@
 # dyspro-backup-manager
 
 ## Synopsis
-This is a command line utility for creating offsite backups which pull from external servers and place on a local
-network.
+This is a command line utility for creating offsite backups which pull from external servers and place on a local network.
 
 ## Motivation
-I wanted to automate backups from my server environment to be stored offsite onto my own home network. At the same time,
-I wanted a single solution that would also manage the backups themselves so that recent backups were kept in close
-intervals while only milestone backups (weekly, monthly, etc) would be kept as time moves on. With additional
-notification enhancements in mind, I decided that a robust custom program would be better than using standard shell
-commands with cron.
+I wanted to automate backups from my server environment to be stored offsite onto my own home network. At the same time, I wanted a single solution that would also manage the backups themselves so that recent backups were kept in close intervals while only milestone backups (weekly, monthly, etc) would be kept as time moves on. With additional notification enhancements in mind, I decided that a robust custom program would be better than using standard shell commands with cron.
 
-For me, this is intended to run on a Raspberry Pi hardwired to my router, which pulls files from several servers, and
-passes the backups to my NAS over an SMB mount. This could be used in a variety of other configurations. View the
-[Usage](#usage) instructions below for limitations.
+For me, this is intended to run on a Raspberry Pi hardwired to my router, which pulls files from several servers, and passes the backups to my NAS over an SMB mount. This could be used in a variety of other configurations. View the [Usage](#usage) instructions below for limitations.
 
 ## Installation
 
@@ -61,13 +54,10 @@ Set the following options in `/etc/dysprobackup.conf`:
 | COLOR_TABLE_HEADING | Console text color for table headings |
 
 ## Usage
-This includes two utilities. The `dysprobackup` command will perform the backup operations, while the 
-`dysprobackupmanage` command will allow management of the backup schedules.
+This includes two utilities. The `dysprobackup` command will perform the backup operations, while the `dysprobackupmanage` command will allow management of the backup schedules.
 
 ### dysprobackupmanage
-Manage all backup operations. None of this is necessary for the `dysprobackup` command to work as long as all data are 
-available within the database. This does include some niceties by validating that connections can be made and that all 
-paths exist.
+Manage all backup operations. None of this is necessary for the `dysprobackup` command to work as long as all data are available within the database. This does include some niceties by validating that connections can be made and that all paths exist.
 
 `dysprobackupmanage -h`  
 View help file for full list of options.
@@ -75,7 +65,7 @@ View help file for full list of options.
 #### Manage Servers
 Manage server connections that backup operations can be assigned against.
 
-`dysprobackup manage servers`
+`dysprobackupmanage servers`
 
 | Option | Description |
 |---|---|
@@ -105,7 +95,7 @@ Unregister a server. Any schedules related to the server will be deleted after c
 #### Manage Schedules
 Manages the backup operations to be executed whenever the `dysprobackup` command is run.
 
-`dysprobackup manage schedules`
+`dysprobackupmanage schedules`
 
 | Option | Description |
 |---|---|
@@ -121,17 +111,13 @@ Manages the backup operations to be executed whenever the `dysprobackup` command
 View help file for the schedule operations.
 
 `dysprobackupmanage schedules list [-n host_name] [-i schedule_id]`  
-Display all backup schedule operations. If the host name is provided, only operations related to this host will be
-displayed.
+Display all backup schedule operations. If the host name is provided, only operations related to this host will be displayed.
 
 `dysprobackupmanage schedules test [-n host_name] [-i schedule_id]`  
-Test that remote and local paths are accessible for all backup schedules. If the host name is provided, only operations
-related to this host will be tested. If the schedule ID is provided, only this specific backup operation will be tested.
+Test that remote and local paths are accessible for all backup schedules. If the host name is provided, only operations related to this host will be tested. If the schedule ID is provided, only this specific backup operation will be tested.
 
 `dysprobackupmanage schedules add -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m [y0,m0,w0,d0]]`  
-Register a new backup operation. This will also validate that paths are accessible. If using the delete remote files
-option (-d) or the manage local files option (-m), you will be prompted to confirm, as these are potentially destructive
-options.
+Register a new backup operation. This will also validate that paths are accessible. If using the delete remote files option (-d) or the manage local files option (-m), you will be prompted to confirm, as these are potentially destructive options.
 
 `dysprobackupmanage schedules update -i schedule_id -n host_name -r /remote/pickup/path -l /local/dropoff/path [-d] [-m [y0,m0,w0,d0]]`  
 Update an existing backup operation. If not known, first use the `list` action to find the schedule ID.  
@@ -140,35 +126,26 @@ Update an existing backup operation. If not known, first use the `list` action t
 Unregister a backup operation.
 
 ### dysprobackup
-Runs all schedules. This is meant to be assigned to a cron job, but can also be run directly. All ouput is sent to
-screen if running directly, and only sent to the log file if automated.
+Runs all schedules. This is meant to be assigned to a cron job, but can also be run directly. All ouput is sent to screen if running directly, and only sent to the log file if automated.
 
 Backup files will be placed in [local folder base]/[host name]/[log id]/
 
 #### Running Under Cron
-The registered command of `dysprobackup` does not properly run under cron. To schedule backups, should instead use node
-to run the script.
+The registered command of `dysprobackup` does not properly run under cron. To schedule backups, should instead use node to run the script.
 
 `0 0 * * * nodejs /home/user/scripts/dyspro-backup-manager/backup.js`
 
 ## Retention Policy
-Schedules can be set to manage the backups, ensuring that disk space isn't wasted on backups that no longer have any
-value. Each time the `dysprobackup` command or `backups.js` script runs, schedules marked with `--managelocal` will be
-subject for removal.
+Schedules can be set to manage the backups, ensuring that disk space isn't wasted on backups that no longer have any value. Each time the `dysprobackup` command or `backups.js` script runs, schedules marked with `--managelocal` will be subject for removal.
 
 ### Format
 Both the default in `dysprobackup.conf` and any schedules follow the following format:
 
 `y0,m0,w0,d0`
 
-Each numeral represents the number of backups to retain for the most recent number of years, months, weeks, and days,
-respectively.
+Each numeral represents the number of backups to retain for the most recent number of years, months, weeks, and days, respectively.
 
-_**Notice:** The sum of the numerals does not necessarily equate to the number of backups that will be retained. There could
-be more to accommodate the next upcoming backup at the weekly, monthly, or yearly backup. For example, if the retention
-schedule is set to `y0,m0,w1,d2`, there could be a max of 4 backups retained. This would be the current and previous
-days, the weekly backup, plus the oldest daily backup before the end of the week, which will be later used to replace
-the weekly backup. Be sure to take this into account when calculating the amount of required local storage space._
+_**Notice:** The sum of the numerals does not necessarily equate to the number of backups that will be retained. There could be more to accommodate the next upcoming backup at the weekly, monthly, or yearly backup. For example, if the retention schedule is set to `y0,m0,w1,d2`, there could be a max of 4 backups retained. This would be the current and previous days, the weekly backup, plus the oldest daily backup before the end of the week, which will be later used to replace the weekly backup. Be sure to take this into account when calculating the amount of required local storage space._
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
